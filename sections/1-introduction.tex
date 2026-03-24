@@ -1,0 +1,169 @@
+%%%%%%%%%%%%Outline%%%%%%%%%%%%%%%%%%
+
+%%%
+% message<eBPF needs performance, flexibility and compatibility>
+% BPF is widely used by various production environments
+% 
+
+%%%
+% message<BPF is currently under optimized>
+% optimization points lie in the in-kernel verification / JIT path
+% trade off: optimize is invasive and heavy, kernel is safety-sensitive
+
+%%%
+% message<optimizing BPF is challenging>
+% optimization points lie in the in-kernel verification / JIT path
+% trade off: optimize is invasive and heavy, kernel is safety-sensitive
+% existing work: a b c, limitation
+
+
+
+
+% message<we propose a dynamic, extensible framework for compiling and optimizing eBPF>
+% design:
+% - userspace daemon: program analysis, optimization, and code rewriting
+% - kernel component: verification and in-place recompilation
+% advantages:
+% - usability: transparent to eBPF developers
+% - flexibility: enable flexible, dynamic optimization policies
+% - correctness: minimal invasion (fewer than 600 lines of code)
+% - safety: uphold the eBPF safety model
+
+% message<evaluation shows that our tool is more light-weight and achieves better performance>
+% effectiveness: 
+% - performance: outperform baseline on various workloads
+% - code size: reduce binary size
+% - huge runtime overhead reduction, small dynamic re-compilation cost
+% generalizability: two arch (x86, ARM)
+
+%%%%%%%%%%%%Outline%%%%%%%%%%%%%%%%%%
+
+\section{Introduction}
+\label{sec:introduction}
+
+The extended Berkeley Packet Filter (eBPF) has become a foundational
+technology in modern operating systems. Production infrastructure
+relies on eBPF programs for network policy enforcement and load
+balancing~\cite{cilium,katran}, observability and
+tracing~\cite{bcc,tracee}, security enforcement via BPF
+LSM~\cite{krsi}, and CPU scheduling via
+\texttt{sched\_ext}~\cite{sched_ext}. Each eBPF program is verified
+for safety by the kernel's BPF verifier, then JIT-compiled into native
+machine code that runs directly in kernel context.
+
+Despite this widespread adoption, the kernel's JIT compilers remain
+rigid, platform-agnostic, and severely under-optimized compared to
+mature userspace runtimes. The JVM employs tiered JIT compilation
+with profile-guided optimization (PGO), dynamic recompilation, and
+deoptimization~\cite{jvm_hotspot}. LLVM provides an extensible pass
+infrastructure where new optimization passes can be registered as
+plugins~\cite{llvm}. WebAssembly runtimes leverage similar multi-tier
+compilation strategies~\cite{wasmtime}. The kernel BPF JIT, by
+contrast, maps each BPF opcode to a single fixed native sequence with
+no intermediate representation, no instruction selection, and no
+peephole optimization~\cite{linux_bpf_jit}. Our experiments show that
+for identical BPF source code, an LLVM-based userspace JIT achieves
+\textbf{30--40\% faster execution} and \textbf{50\% smaller binary
+size} compared to the kernel JIT (\S\ref{sec:characterization}).
+
+The root cause of this gap is not a lack of known optimizations but
+the prohibitive cost of implementing them. Realizing an LLVM-pass-like
+compilation framework inside the kernel would require tens of
+thousands of lines of kernel code---code that must be formally
+auditable, safe against all adversarial inputs, and accepted through a
+multi-month upstream review process. Even simple peephole
+optimizations face lengthy review cycles, and static or fixed
+optimizations can be harmful on certain workloads (e.g., conditional
+moves degrade performance on branches that hardware can predict
+accurately). Furthermore, many optimizations and security hardenings
+are simply not attempted due to the stringent kernel safety constraints
+and the sheer implementation complexity involved.
+
+
+
+
+
+\textsc{BpfReJIT} addresses this challenge through three key insights:
+
+\textbf{Insight 1: The kernel needs an LLVM-pass-like extensible
+compilation framework.} Mature userspace runtimes achieve high
+performance through extensible compilation frameworks: LLVM has its
+pass infrastructure; JVM HotSpot performs runtime-guided dynamic
+recompilation. The kernel BPF JIT has \emph{none} of these
+capabilities. We need a minimal, dynamic, extensible compilation
+framework---analogous to LLVM's pass infrastructure but designed for
+the OS kernel---to bring the same extensible, runtime-guided
+optimization capabilities to kernel-resident eBPF programs.
+
+\textbf{Insight 2: Microkernel-inspired separation of ``what can be
+optimized'' from ``how to optimize.''} Analogous to how microkernels
+separate mechanism from policy, \textsc{BpfReJIT} splits JIT
+compilation into two concerns. The \emph{kernel component} (minimal,
+${\sim}$600~lines) defines \emph{what can be optimized} through
+lightweight kernel extensions that specify platform-specific
+instruction capabilities with verification semantics and native
+emission callbacks. The \emph{userspace daemon} (full-featured)
+defines \emph{how to optimize} through compilation passes guided by
+static analysis, platform capabilities, and runtime profiling
+data---analogous to JVM's dynamic recompilation with PGO. New
+optimizations require only a new kernel module plus a daemon update,
+with zero changes to the core kernel source.
+
+\textbf{Insight 3: Safety $\neq$ Correctness, aligned with the kernel
+eBPF security model.} Unlike JVM or LLVM compilation frameworks that
+must simultaneously guarantee both safety and correctness,
+\textsc{BpfReJIT} \emph{separates} the two, aligning with the
+existing kernel eBPF security model. The kernel component guarantees
+\emph{safety}: the BPF verifier provides identical safety guarantees
+for recompiled bytecode as for freshly loaded programs via
+\texttt{BPF\_PROG\_LOAD}, ensuring the kernel cannot crash, leak
+information, or be exploited. The userspace daemon is responsible for
+\emph{correctness}: ensuring that compilation transformations preserve
+program semantics. If the daemon has a bug, program behavior may
+change, but kernel safety is never compromised (fail-safe). This
+separation is possible precisely because BPF has a mandatory
+verifier---a property absent from native kernel code, where mechanisms
+like livepatch must fully trust the patch author.
+
+\textsc{BpfReJIT} realizes these insights through a three-component
+architecture: (1)~\emph{kernel syscall extensions} that allow
+retrieving the original BPF bytecode of loaded programs and
+atomically re-verifying, re-JIT-compiling, and in-place replacing the
+native code of a running program; (2)~\emph{kinsn}, a platform-specific
+instruction extension mechanism implemented via inline kfuncs that
+allows kernel modules to define new instructions with verification
+semantics and native emission callbacks, gracefully degrading to
+function calls when modules are not loaded; and (3)~a \emph{userspace
+daemon} that discovers, analyzes, and transparently optimizes
+kernel-resident eBPF programs using compilation passes informed by
+runtime profiling. The same framework supports four use cases:
+performance optimization (wide-load fusion, conditional moves, rotate
+idioms, constant propagation, PGO), security hardening (Spectre
+mitigation injection, bounds-check insertion), malicious program
+neutralization (live hot-patching of vulnerable BPF programs), and
+runtime observability (transparent tracing insertion without
+application changes).
+
+\textbf{Contributions.}
+\begin{itemize}
+  \item A characterization of the kernel JIT code quality gap,
+    identifying a 30--40\% execution-time deficit and 50\% code-size
+    inflation rooted in the absence of platform-specific instruction
+    selection, runtime-guided optimization, and an extensible
+    compilation framework (\S\ref{sec:characterization}).
+  \item \textsc{BpfReJIT}: a dynamic, minimally invasive, and
+    extensible kernel compilation framework based on a
+    microkernel-inspired separation of concerns, implemented with
+    fewer than 600 lines of kernel modifications while transparently
+    supporting all existing eBPF tools, loaders, and subsystems
+    (\S\ref{sec:design}, \S\ref{sec:implementation}).
+  \item A novel \emph{kinsn} mechanism for platform-specific
+    instruction extensions, implemented via inline kfuncs that reuse
+    the existing kfunc verifier, BTF type system, and module
+    lifecycle management with zero verifier modifications
+    (\S\ref{sec:kinsn}).
+  \item An evaluation across micro-benchmarks, a production BPF
+    program corpus, and end-to-end workloads demonstrating up to 40\%
+    performance improvement, 50\% code-size reduction, and negligible
+    recompilation overhead (\S\ref{sec:evaluation}).
+\end{itemize}

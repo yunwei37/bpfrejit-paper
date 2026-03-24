@@ -1,0 +1,25 @@
+%%%%%%%%%%%%Outline%%%%%%%%%%%%%%%%%%
+
+%%%
+% message<xx>
+% xx
+
+%%%%%%%%%%%%Outline%%%%%%%%%%%%%%%%%%
+
+\section{Implimentation}
+\label{sec:implementation}
+
+% TODO: Rewrite for v2 implementation.
+% v2 kernel changes: ~600 LOC across 6 files (bpf.h, btf.h, uapi/linux/bpf.h,
+%   syscall.c, verifier.c, bpf_jit_comp.c).
+% Key implementation details:
+%   - BPF_PROG_GET_ORIGINAL: exports saved original bytecode
+%   - BPF_PROG_REJIT: accepts new bytecode, runs bpf_check() + JIT, atomic image swap
+%   - KF_INLINE_EMIT: new kfunc flag, JIT calls module emit callback instead of CALL
+%   - Daemon: Rust, raw BPF syscall, zero libbpf dependency
+
+\textit{[TODO: Full v2 implementation description. \textsc{BpfReJIT}
+modifies the Linux kernel (v7.0-rc2) in approximately 600 lines of
+code across 6 files. The userspace daemon is implemented in Rust with
+zero libbpf dependency, interacting with the kernel exclusively through
+raw BPF syscalls. See plan doc \S4.5 for file layout.]}

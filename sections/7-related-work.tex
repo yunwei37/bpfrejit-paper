@@ -1,0 +1,73 @@
+%%%%%%%%%%%%Outline%%%%%%%%%%%%%%%%%%
+
+%%%
+% message<xx>
+% xx
+
+%%%%%%%%%%%%Outline%%%%%%%%%%%%%%%%%%
+
+\section{Related Work}
+\label{sec:related-work}
+
+\textbf{BPF bytecode optimization.}
+K2~\cite{k2} applies stochastic superoptimization to BPF bytecode.
+Merlin~\cite{merlin} lifts BPF to LLVM IR for optimization.
+EPSO~\cite{epso} uses evolutionary program synthesis at the bytecode
+level. All three operate \emph{before} program loading: they require
+the original \texttt{.bpf.o} file, cannot optimize programs already
+loaded by third-party tools, and do not support runtime profiling
+feedback. Since the BPF ISA lacks opcodes for conditional moves,
+rotate, or wide-load fusion, no bytecode rewrite can introduce these
+native instructions. \textsc{BpfReJIT} operates \emph{post-load} and
+transparently, and is complementary to bytecode optimizers.
+
+\textbf{BPF verification and extensibility.}
+ePass~\cite{epass} proposes in-kernel optimization passes at BPF load
+time but requires source modifications and does not support post-load
+re-optimization. BCF~\cite{bcf} offloads BPF verification to userspace
+via cryptographic certificates, addressing verifier scalability rather
+than JIT code quality. \textsc{BpfReJIT} is orthogonal: BCF offloads
+verification; \textsc{BpfReJIT} offloads optimization.
+
+\textbf{Superoptimization.}
+Massalin's superoptimizer~\cite{superoptimizer} and
+STOKE~\cite{stoke} find optimal native sequences.
+Bansal and Aiken~\cite{credal} automate peephole rule generation.
+These systems discover better instruction sequences;
+\textsc{BpfReJIT} provides a framework to \emph{deploy} such
+sequences to kernel-resident programs transparently and safely.
+
+\textbf{Feedback-directed and adaptive JIT compilation.}
+Profile-guided optimization~\cite{feedback_directed} and adaptive JIT
+techniques~\cite{jit_survey} (e.g., JVM HotSpot~\cite{jvm_hotspot},
+V8, Graal) use runtime feedback to guide multi-tier compilation. These
+systems have full control over their compiler backend.
+\textsc{BpfReJIT} brings the same principle---runtime-guided dynamic
+recompilation---to a much more constrained setting: the kernel BPF JIT,
+where the compiler is part of the trusted computing base and cannot be
+replaced, but can be extended through a minimal, safe interface.
+
+\textbf{Auto-tuning and algorithm/schedule separation.}
+Halide~\cite{halide} separates algorithm from schedule; TVM and XLA
+auto-tune compilation parameters for deep learning workloads.
+\textsc{BpfReJIT}'s microkernel-inspired separation of ``what can be
+optimized'' from ``how to optimize'' draws on the same principle of
+externalizing optimization decisions, applied to OS kernel compilation
+with much stronger safety constraints.
+
+\textbf{Compiler extensibility.}
+LLVM's pass infrastructure~\cite{llvm} allows new optimization passes
+to be registered as plugins. \textsc{BpfReJIT}'s kinsn mechanism
+provides an analogous extensibility model for the kernel JIT: new
+platform-specific instructions can be added via kernel modules without
+modifying core kernel source, similar to how LLVM passes extend the
+compiler without modifying the pass manager.
+
+\textbf{Kernel live patching.}
+Linux live patching (kpatch, livepatch) modifies running kernel code
+at function granularity but must fully trust the patch author---there
+is no verification step. \textsc{BpfReJIT} operates at BPF bytecode
+granularity with full verifier re-validation, providing a fundamentally
+stronger safety guarantee: the kernel verifier ensures that no
+recompiled program can violate kernel safety invariants, regardless of
+daemon behavior.

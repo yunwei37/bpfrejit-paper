@@ -1,0 +1,226 @@
+%%%%%%%%%%%%Outline%%%%%%%%%%%%%%%%%%
+
+%%%
+% message<xx>
+% xx
+
+%%%%%%%%%%%%Outline%%%%%%%%%%%%%%%%%%
+
+\section{Background and Motivation}
+\label{sec:background-and-motivation}
+
+\subsection{eBPF Architecture}
+
+eBPF extends the original Berkeley Packet Filter~\cite{ebpf_sosp}
+with a register-based instruction set, a rich type system, and a
+general-purpose execution environment inside the Linux
+kernel~\cite{bpf_lwn}. An eBPF program is compiled from C (or Rust)
+into BPF bytecode by Clang/LLVM, producing an ELF object file. At
+load time, the kernel subjects the bytecode to a static verifier
+(\texttt{bpf\_check()}) that enforces memory safety, bounded
+execution, and type correctness. Programs that pass verification are
+JIT-compiled into native machine code and attached to kernel hooks
+(XDP, TC, tracepoints, kprobes, LSM, \texttt{sched\_ext}, etc.).
+
+The eBPF runtime provides three mechanisms for programs to interact
+with kernel state: \emph{maps} (shared key-value data structures),
+\emph{helper functions} (kernel-provided utility functions callable
+from BPF), and \emph{kfuncs} (typed kernel functions exposed via BTF
+that can be called like regular functions). Kfuncs are a recent
+extension that allows kernel modules to export functions to BPF
+programs with full type information, verified by the existing
+\texttt{check\_kfunc\_call()} path without additional verifier
+changes.
+
+\subsection{Current JIT Limitations}
+
+The kernel JIT compiler maps each BPF instruction to a single,
+hand-audited native instruction sequence~\cite{linux_bpf_jit}. This
+one-to-one mapping ensures that the generated code is safe and
+auditable, but it also means that every instruction-selection decision
+is fixed at kernel compile time. Three categories of optimization
+opportunities are systematically missed:
+
+\textbf{Absent platform-specific instructions.} The BPF instruction
+set has no opcodes for conditional moves (\texttt{cmov}), bit-field
+extraction (\texttt{bextr}), rotate (\texttt{rorx}), or
+load-effective-address (\texttt{lea}). The kernel JIT therefore cannot
+emit these instructions even when the BPF bytecode contains idioms
+(e.g., shift-or pairs for rotation, branch-over-move diamonds for
+conditional selection) that map directly to them.
+
+\textbf{No runtime-guided optimization.} The kernel JIT performs a
+single compilation pass with no feedback from runtime behavior. There
+is no profile-guided optimization, no dynamic recompilation based on
+hot-path information, no constant propagation from frozen map values,
+and no workload-adaptive branch layout. Mature runtimes like JVM
+HotSpot~\cite{jvm_hotspot} routinely employ all of these techniques.
+
+\textbf{No extensible compilation framework.} Adding a new
+optimization to the kernel JIT requires modifying core kernel source
+files, passing multi-month upstream review, and waiting for the next
+kernel release cycle. There is no plugin or pass infrastructure that
+would allow new optimizations to be developed, tested, and deployed
+independently of the kernel release schedule.
+
+\subsection{Why Existing Approaches Fall Short}
+
+Several systems have addressed BPF optimization, but none provides a
+post-load, transparent, runtime-guided compilation framework
+(Table~\ref{tab:existing_work}).
+
+K2~\cite{k2} applies stochastic superoptimization to BPF bytecode.
+Merlin~\cite{merlin} lifts BPF to LLVM IR for optimization.
+EPSO~\cite{epso} uses evolutionary program synthesis at the bytecode
+level. All three operate \emph{before} JIT compilation: they optimize
+the bytecode input to the JIT, not its native output. Since the BPF
+ISA lacks opcodes for \texttt{cmov}, \texttt{rorx}, or wide-load
+fusion, no bytecode rewrite can introduce these native instructions.
+Moreover, all three require the original \texttt{.bpf.o} file, cannot
+optimize programs already loaded by third-party tools, and do not
+support runtime profiling feedback.
+
+ePass~\cite{epass} proposes in-kernel optimization passes at load
+time, but requires source modifications and does not support post-load
+re-optimization. BCF~\cite{bcf} offloads verification to userspace
+via certificates, addressing verifier scalability rather than JIT
+optimization. Neither system provides a runtime-guided, transparent
+optimization framework.
+
+\begin{table}[t]
+  \centering
+  \caption{Comparison with BPF optimization and verification systems.
+  \textsc{BpfReJIT} is the only system that operates post-load,
+  transparently, and with runtime profiling support.}
+  \label{tab:existing_work}
+  \small
+  \begin{tabular}{lccccc}
+    \toprule
+    System & Timing & Transparent? & PGO? & Backend? & Safety \\
+    \midrule
+    K2~\cite{k2}          & pre-load  & No  & No  & No  & SMT solver \\
+    Merlin~\cite{merlin}  & pre-load  & No  & No  & No  & compiler \\
+    EPSO~\cite{epso}      & pre-load  & No  & No  & No  & compiler \\
+    ePass~\cite{epass}    & load-time & No  & No  & No  & in-kernel \\
+    BCF~\cite{bcf}        & load-time & No  & No  & No  & certificate \\
+    \textbf{BpfReJIT}     & \textbf{post-load} & \textbf{Yes} & \textbf{Yes} & \textbf{Yes} & \textbf{verifier} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{Quantifying the Code Quality Gap}
+\label{sec:characterization}
+
+\textbf{Methodology.} We compare the kernel JIT (Linux 6.15.11) against
+llvmbpf on 31 pure-JIT microbenchmarks that isolate code generation
+quality (no map lookups on the hot path). Each benchmark runs 30
+iterations of 1{,}000 repeats; we report the per-benchmark median of
+per-iteration medians. We use paired Wilcoxon signed-rank tests with
+Benjamini-Hochberg correction and bootstrap 95\% CIs for suite-level
+geomeans. Platform: Intel Core Ultra 9 285K (Arrow Lake-S), performance
+governor, turbo disabled.
+
+\begin{table}[t]
+  \centering
+  \caption{Kernel JIT code quality gap: suite-level summary.}
+  \label{tab:exec_summary}
+  \begin{tabular}{lrrr}
+    \toprule
+    Suite & Geomean (L/K) & 95\% CI & Sig.\ / Total \\
+    \midrule
+    Pure-JIT (31) & 0.849$\times$ & [0.834, 0.865] & 25/31 \\
+    Runtime (9)   & 0.829$\times$ & [0.801, 0.859] & 7/9   \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Table~\ref{tab:exec_summary} summarizes the gap. llvmbpf is faster on
+21/31 benchmarks; the kernel wins on 10/31, primarily loop-dominated
+workloads where simpler code has lower I-cache pressure. Code size tells
+a cleaner story: llvmbpf is smaller on \emph{all} 31 benchmarks (geomean
+0.496$\times$), confirming the gap is systematic.
+
+\textbf{Root causes.} JIT-dump analysis of 22 benchmarks decomposes the
+kernel's instruction surplus into three mechanisms covering 89\% of the
+total: byte-load recomposition (50.7\%), absent conditional moves
+(19.9\%), and fixed callee-saved registers (18.5\%).
+
+\subsection{The Case Against Fixed Kernel Heuristics}
+\label{sec:policy_sensitivity}
+
+A fixed kernel heuristic would close the gap only if every optimization
+were unconditionally profitable. We present two forms of evidence that
+this assumption fails.
+
+\textbf{Evidence 1: Policy sensitivity.}
+Table~\ref{tab:cmov_ablation} shows an ablation study in llvmbpf where
+\texttt{cmov} emission is toggled. Disabling \texttt{cmov}
+\emph{hurts} programs with unpredictable branches
+(\texttt{switch\_dispatch}: +26.3\%) but \emph{helps} programs with
+predictable branches (\texttt{bounds\_ladder}: $-$18.1\%). The same
+legal lowering helps one workload class and hurts another by comparable
+magnitudes. We validate both directions in the kernel JIT via BpfReJIT: forcing
+CMOV on predictable-branch \texttt{log2\_fold} degrades performance by
+34.5\% (383.5$\to$590.0\,ns, $p{=}0.002$), while applying it to
+unpredictable-branch \texttt{cmov\_select} yields a modest improvement
+(744$\to$723\,ns, \S\ref{sec:evaluation}).
+
+\begin{table}[t]
+  \centering
+  \caption{Cmov ablation in llvmbpf: profitability depends on workload.
+  Validated in the kernel JIT via BpfReJIT re-JIT (\S\ref{sec:evaluation}).}
+  \label{tab:cmov_ablation}
+  \begin{tabular}{lrrr}
+    \toprule
+    Benchmark & Normal & No-cmov & $\Delta$ \\
+    \midrule
+    \texttt{switch\_dispatch}  & 213\,ns & 269\,ns & \textbf{+26.3\%} \\
+    \texttt{binary\_search}    & 205\,ns & 229\,ns & \textbf{+11.7\%} \\
+    \texttt{bounds\_ladder}    & 83\,ns  & 68\,ns  & $-18.1\%$ \\
+    \texttt{large\_mixed\_500} & 415\,ns & 316\,ns & $-23.9\%$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\textbf{Why static analysis is insufficient.} Branch predictability
+depends on \emph{runtime input distributions}, not just program
+structure. A BPF program performing packet classification against a
+hash table has data-dependent branches whose predictability varies with
+traffic mix---a property that changes between deployments and over time.
+No static analysis of BPF bytecode can determine the distribution of
+live traffic at a particular deployment site.
+
+\textbf{Evidence 2: Combination interference.}
+Even if each optimization were individually safe, applying all of them
+simultaneously can produce regressions. We built a ``fixed-all'' kernel
+with all four optimizations hardcoded. While code-size effects compose
+additively (each program's native code shrinks by exactly the sum of the
+individual deltas), execution-time effects \emph{do not}.
+Table~\ref{tab:fixed_preview} previews the key finding: the fixed-all
+kernel regresses \texttt{log2\_fold} by 28.3\% and
+\texttt{stride\_load\_16} by 14.2\%.
+
+\begin{table}[t]
+  \centering
+  \caption{Fixed-all kernel baseline: code size composes additively,
+  execution time does not.}
+  \label{tab:fixed_preview}
+  \small
+  \begin{tabular}{lrrr}
+    \toprule
+    Program & Exec $\Delta$ & Code $\Delta$ & Interpretation \\
+    \midrule
+    \texttt{rotate64\_hash}     & $-$16.8\% & $-$1{,}178\,B & Substrate win \\
+    \texttt{pkt\_rss\_hash}     & $-$14.9\% & $-$151\,B  & Substrate win \\
+    \texttt{load\_byte\_recomp} & $-$13.0\% & $-$12\,B   & Substrate win \\
+    \texttt{stride\_load\_16}   & \textbf{+14.2\%} & $-$30\,B   & Combination regression \\
+    \texttt{log2\_fold}         & \textbf{+28.3\%} & $-$2\,B    & CMOV regression \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+The mechanism we need is not a better heuristic but a separation of
+concerns: the kernel should enforce which native code variants are
+\emph{safe to emit}, while the operator---who understands the
+workload---specifies which safe variants to \emph{apply}, selectively
+per program and per site.

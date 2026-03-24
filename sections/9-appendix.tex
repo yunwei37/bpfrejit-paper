@@ -1,0 +1,36 @@
+%%%%%%%%%%%%Outline%%%%%%%%%%%%%%%%%%
+
+%%%
+% message<xx>
+% xx
+
+%%%%%%%%%%%%Outline%%%%%%%%%%%%%%%%%%
+
+%%
+%% If your work has an appendix, this is the place to put it.
+\appendix
+
+\section{Research Methods}
+
+\section{Benchmark Descriptions}
+\label{appendix:benchmarks}
+
+\begin{table}[h]
+  \centering
+  \caption{Key benchmark descriptions.}
+  \label{tab:bench_desc}
+  \small
+  \begin{tabular}{llp{4.2cm}}
+    \toprule
+    Benchmark & Category & Description \\
+    \midrule
+    \texttt{log2\_fold}            & ALU       & Integer log2 with predictable branches; CMOV policy-sensitivity case \\
+    \texttt{switch\_dispatch}      & ctrl-flow & Multi-way dispatch with unpredictable branches; CMOV benefit case \\
+    \texttt{rotate64\_hash}        & ALU       & 64-bit rotate hash; 115 rotate sites \\
+    \texttt{pkt\_rss\_hash}        & hash      & RSS hash computation; 11 rotate sites \\
+    \texttt{load\_byte\_recompose} & memory    & 8-byte recompose from byte loads \\
+    \texttt{stride\_load\_4}       & memory    & 4-byte strided loads; LEA candidate \\
+    \texttt{stride\_load\_16}      & memory    & 16-byte strided loads; LEA regression case \\
+    \bottomrule
+  \end{tabular}
+\end{table}

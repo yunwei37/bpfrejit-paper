@@ -1,0 +1,46 @@
+%%%%%%%%%%%%Outline%%%%%%%%%%%%%%%%%%
+
+%%%
+% message<implementing optimization for eBPF is challenging>
+% BPF needs performance, flexibility and compatibility
+% problem: optimization points lie in the in-kernel verification / JIT path
+% - heavy
+% - invasive
+% - safety-sensitive
+% - architecture-specific ?
+
+%%%
+% message<we propose a dynamic, extensible framework for compiling and optimizing eBPF>
+% design:
+% - userspace daemon: program analysis, optimization, and code rewriting
+% - kernel component: verification and in-place recompilation
+% advantages:
+% - usability: transparent to eBPF developers
+% - flexibility: enable flexible, dynamic optimization policies
+% - correctness: minimal invasion (fewer than 600 lines of code)
+% - safety: uphold the eBPF safety model
+
+%%%
+% message<evaluation shows that our tool is more light-weight and achieves better performance>
+% effectiveness: 
+% - performance: outperform baseline on various workloads
+% - code size: reduce binary size
+% - huge runtime overhead reduction, small dynamic re-compilation cost
+% generalizability: two arch (x86, ARM)
+
+% comment from yusheng: 
+% 内核 很慢 ，因为 security issue 很多，修改很复杂
+
+%%%%%%%%%%%%Outline%%%%%%%%%%%%%%%%%%
+
+\begin{abstract}
+
+eBPF is widely adopted for observability, networking, and customization in modern systems. However, optimizing eBPF performance remains challenging, as key optimization opportunities lie in the in-kernel verification and JIT path, and optimizing the pipeline requires heavy, invasive changes to safety-critical kernel code.
+%
+We present \tool, a dynamic and extensible framework for compiling and optimizing eBPF programs. \tool separates optimization from kernel enforcement. \tool offloads optimization logic to a userspace daemon, which uses runtime profiling data to identify optimization opportunities and rewrite eBPF bytecode. In the kernel, only minimal support is needed to re-verify and recompile rewritten programs in place. \tool is transparent to eBPF developers and allows optimization policies to evolve flexibly in userspace. On the kernel side, it keeps changes minimal (fewer than 600 lines of code) and preserves the original eBPF safety model.
+%
+Evaluation across diverse hardware platforms and representative workloads (network monitoring, security enforcement, and observability tracing) demonstrates that \tool achieves up to 40\% performance improvement, 50\% reduction in binary size, and negligible overhead.
+%
+\tool provides a practical, upstream-compatible path toward dynamic, extensible compilation frameworks in operating system kernels.
+
+\end{abstract}
