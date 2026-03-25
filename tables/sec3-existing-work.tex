@@ -1,0 +1,20 @@
+\begin{table}[t]
+  \centering
+  \caption{Comparison with BPF optimization and verification systems.
+  \textsc{BpfReJIT} is the only system that operates post-load,
+  transparently, and with runtime profiling support.}
+  \label{tab:existing_work}
+  \small
+  \begin{tabular}{lccccc}
+    \toprule
+    System & Timing & Transparent? & PGO? & Backend? & Safety \\
+    \midrule
+    K2~\cite{k2}          & pre-load  & No  & No  & No  & SMT solver \\
+    Merlin~\cite{merlin}  & pre-load  & No  & No  & No  & compiler \\
+    EPSO~\cite{epso}      & pre-load  & No  & No  & No  & compiler \\
+    ePass~\cite{epass}    & load-time & No  & No  & No  & in-kernel \\
+    BCF~\cite{bcf}        & load-time & No  & No  & No  & certificate \\
+    \textbf{BpfReJIT}     & \textbf{post-load} & \textbf{Yes} & \textbf{Yes} & \textbf{Yes} & \textbf{verifier} \\
+    \bottomrule
+  \end{tabular}
+\end{table}

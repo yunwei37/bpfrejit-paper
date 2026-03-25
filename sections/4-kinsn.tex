@@ -1,0 +1,46 @@
+%%%%%%%%%%%%Outline%%%%%%%%%%%%%%%%%%
+
+% Section 4 overview
+
+% message<Section 4 explains the design of BpfReJIT as a post-load optimization loop: how it recompiles a live program, how rewritten programs can use new native instructions, how rewrites are chosen, and why the kernel remains the final safety boundary.>
+
+% 4.1 Recompiling a Live Program
+
+% message<BpfReJIT treats optimization as recompilation of the same live program, not replacement by a different program.>
+% message<This design therefore needs both a stable rewrite baseline and an in-place replacement path.>
+% message<Together, these two properties make live optimization transparent to existing attachments and links.>
+
+% 4.2 Exposing New Native Instructions
+
+% message<Recompiling a live program is useful only if the rewritten program can produce better native code than plain BPF rewriting allows.>
+% message<BpfReJIT therefore lets the kernel expose additional native instructions that rewritten programs may use.>
+% message<This design expands what recompilation can produce without moving optimization policy into the kernel.>
+
+% 4.3 Choosing Rewrites in Userspace
+
+% message<Once the kernel exposes multiple legal rewrite choices, selecting among them becomes a policy problem rather than a safety problem.>
+% message<BpfReJIT assigns that policy problem to a userspace daemon that closes the optimization loop for live programs.>
+% message<This split keeps rewrite selection adaptable to workload and deployment context while leaving the kernel interface stable.>
+
+% 4.4 Keeping the Kernel as the Safety Boundary
+
+% message<BpfReJIT works because kernel safety and rewrite correctness are separate responsibilities.>
+% message<The kernel remains the final safety gate for every rewritten program, while the daemon is responsible for semantic preservation.>
+% message<This boundary makes repeated live optimization fail-safe because rejected rewrites change nothing and accepted rewrites preserve program identity.>
+
+
+
+%%%%%%%%%%%%Outline%%%%%%%%%%%%%%%%%%
+
+\section{Kinsn: Extending eBPF Bytecode}
+\label{sec:kinsn}
+
+Kinsn extends the eBPF bytecode language with abstract instructions whose semantics remain expressible in ordinary eBPF while permitting more direct lowering to native instructions. An optimized program is therefore represented as an extended eBPF program rather than as ordinary eBPF plus auxiliary metadata. Each kinsn denotes one semantic operation at a program point where ordinary eBPF would otherwise require a longer instruction sequence.
+
+\noindent\textbf{Bytecode representation.} A kinsn is defined by two parts. The first is a target, which identifies the operation family, such as a rotate, select, extract, or endian-aware load. The second is an operand-binding payload, or \emph{sidecar}, which specifies how that operation is instantiated at this program point. The sidecar records which source registers are read, which destination register is written, and any immediate fields or mode bits needed by the target operation. This representation keeps optimization intent explicit in the bytecode itself instead of hiding it in a later JIT pattern match or forcing it into a helper-style calling convention.
+
+\noindent\textbf{Lowering to executable code.} Each kinsn admits two realizations. The first realization maps the abstract instruction to a canonical ordinary-eBPF sequence. The second realization maps it to an architecture-specific native sequence. Let $k$ denote a kinsn. We write $\mathsf{Inst}(k)$ for the ordinary-eBPF sequence that defines the canonical BPF-visible semantics of $k$, and $\mathsf{Emit}_{\mathrm{arch}}(k)$ for the native sequence emitted on architecture $\mathrm{arch}$. Consider a conditional select. In ordinary eBPF, the select appears as a short branch diamond that tests a predicate and moves one of two input values into the destination register. In extended eBPF, the same operation appears as one kinsn whose sidecar binds the predicate register, the two candidate inputs, the destination register, and the comparison mode. On x86, the native lowering may emit a sequence such as a test followed by a conditional move; on another architecture, it may emit a different but semantically equivalent native sequence. Figure~\ref{fig:design-overview} will illustrate this relation with ordinary eBPF on the left, a kinsn in the middle, and emitted native code on the right. Ordinary eBPF is therefore not the long-term identity of kinsn. It is the canonical semantic expansion used for proof and, when needed, for generic fallback execution.
+
+\input{figures/sec-4-kinsn}
+
+\noindent\textbf{Proof lowering and semantic equivalence.} Verification proceeds on the ordinary-eBPF meaning of kinsn rather than on target-specific machine code. Given an extended program $P$, the verifier reasons about a proof object $L(P)$ obtained by replacing each kinsn $k$ with $\mathsf{Inst}(k)$ and then checking $L(P)$ under the standard eBPF verification rules. If verification succeeds, the result is attributed back to the original extended program $P$. The contract of kinsn is therefore semantic rather than syntactic: the native lowering need not reproduce the exact instruction-by-instruction form of $\mathsf{Inst}(k)$, but it must preserve BPF-visible semantics, including register values, memory effects, and control flow at the eBPF abstraction boundary. This separation is what makes kinsn useful to BpfReJIT. The rewrite pipeline can introduce and compose kinsn as stable bytecode-level objects, while the kernel continues to rely on ordinary eBPF semantics as its proof boundary.

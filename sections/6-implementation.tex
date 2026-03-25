@@ -1,0 +1,66 @@
+%%%%%%%%%%%%Outline%%%%%%%%%%%%%%%%%%
+
+% 5 Implementation
+
+% Section 5 overview
+
+% message<Section 5 explains how Linux realizes the design of Section 4 through original-program capture and recompilation entry, kinsn support in the verifier and JIT, safe publication of rewritten code, and a daemon pipeline that drives the loop.>
+
+% 5.1 Original Program Capture and Recompilation Path
+
+% message<Linux realizes live recompilation by capturing the original program before later kernel stages rewrite it.>
+% message<The recompilation path accepts a rewritten whole program and routes it back through the normal verifier and JIT pipeline.>
+% message<This realization keeps the kernel-side interface simple by leaving analysis and rewrite construction in userspace.>
+
+% 5.2 kinsn in the Verifier and JIT
+
+% message<Linux realizes each additional native instruction as a kinsn family shared by the verifier and the JIT.>
+% message<The verifier checks the safety-relevant meaning of a kinsn, and the JIT maps the same kinsn to native code.>
+% message<This realization keeps new instruction families modular and reuses one framework path as the set of choices grows.>
+
+% 5.3 Safe Code Swap and Attachment Refresh
+
+% message<Linux realizes in-place replacement by publishing a new native image for the same live program only after recompilation succeeds.>
+% message<It also refreshes kernel state that depends on program entry points so that existing attachments remain valid.>
+% message<This realization enforces the design’s transparency and fail-safe guarantees during code replacement.>
+
+% 5.4 Daemon Pipeline
+
+% message<The daemon is realized as a whole-program rewrite pipeline that discovers live programs, selects rewrites, and submits rewritten programs back to the kernel.>
+% message<Its operating modes differ in when the pipeline runs, not in how rewrites are constructed or submitted.>
+% message<This realization keeps policy in userspace without moving the kernel’s enforcement role.>
+
+%%%%%%%%%%%%Outline%%%%%%%%%%%%%%%%%%
+
+\section{Implementation}
+\label{sec:impl}
+
+Section~\ref{sec:impl} explains how \tool realizes the design in Linux. Section~\ref{sec:impl-rejit} describes how the kernel preserves the original bytecode of a loaded program and rebuilds rewritten programs through the normal verification and JIT pipeline. Section~\ref{sec:impl-kinsn} explains how \emph{kinsn} is represented and how the verifier and the JIT share one implementation contract for each instruction family. Section~\ref{sec:impl-publish} presents the replacement path, including safe publication of new code and refresh of attachment-specific state. Finally, Section~\ref{sec:impl-daemon} describes the daemon as a whole-program rewrite pipeline and shows how the same pipeline supports both controlled experiments and long-running deployment.
+
+\subsection{Profiling and Rewriting BPF Programs}
+\label{subsec:impl-rejit}
+
+To support whole-program rewriting, the kernel saves the program's original bytecode at load time, before later compilation stages modify that program internally. The saved copy becomes the source of truth for future rewrites. When the daemon asks for a live program, the kernel exports this saved bytecode together with the metadata needed to rebuild a complete rewritten program. In this way, the daemon always starts from the same stable baseline that was originally loaded, rather than from a kernel-internal form that has already been transformed by verification and fixup passes.
+
+The replacement path follows the same principle. When the daemon submits a rewritten whole program, the kernel rebuilds that candidate through the normal compilation pipeline. Concretely, the kernel treats the rewritten program as a fresh program for verification and JIT compilation, builds the replacement code off to the side, and commits only if both stages succeed. If either stage fails, the kernel discards the candidate and keeps the current live code unchanged. This implementation directly realizes the design choice from Section~\ref{sec:design-recompile}: userspace owns rewrite construction, while the kernel reuses its existing accept-or-reject compilation path.
+
+\subsection{Realizing kinsn in the Verifier and the JIT}
+\label{sec:impl-kinsn}
+
+Section~\ref{sec:design-kinsn} introduced kinsn as the way \tool exposes additional native instruction choices. In the implementation, each kinsn appears as a compact encoded instruction family inside the rewritten program. The encoding carries the information needed at the rewritten site, such as which instruction family is being requested and the operands needed to realize that site. During verification, the kernel decodes this site and checks its safety-relevant effect. During JIT compilation, the backend decodes the same site and lowers it to the corresponding native sequence for that architecture.
+
+Each kinsn family therefore has one shared contract across verification and code generation. Verification reasons about the effect of the encoded site---for example, which values it reads, which value it defines, and what safety-relevant constraints must hold---rather than about profitability or program-level policy. Code generation uses the matching architecture-specific emitter for the same family. This shared contract is what makes the implementation extensible: adding a new family reuses the same framework hooks for decoding, verification, and emission, while leaving the main recompilation path unchanged.
+
+\subsection{Publishing New Code Safely}
+\label{sec:impl-publish}
+
+Installing rewritten code safely requires more than compiling a replacement image. The new image must be built completely before it becomes visible, it must become visible in a single commit step, and the old image must remain valid until active readers are done with it. \tool implements replacement as a staged publication path: the kernel first prepares the verified and JIT-compiled replacement code, then publishes the new image atomically, and only later retires the old image after the relevant synchronization point. This ensures that the kernel never exposes a half-installed program and never leaves the system between two states.
+
+The implementation must also refresh attachment-specific state that depends on program entry points. Replacing one code pointer is not sufficient when other kernel paths cache program addresses outside the main program body. Examples include attachment mechanisms built around dispatchers or trampolines. After publishing new code, \tool updates these cached references so that existing attachments continue to point to the current image. This refresh step is what turns recompilation into true in-place replacement: the same logical live program remains attached, but all execution paths observe the newly compiled native code.
+
+\subsection{Daemon Architecture}
+\label{sec:impl-daemon}
+
+The userspace daemon is implemented as a whole-program rewrite pipeline. It enumerates live programs through the kernel interface, collects each program's original bytecode and associated metadata, and analyzes the program for candidate rewrite sites. It then combines the selected rewrites into a rewritten whole program and submits that program back to the kernel. If recompilation is rejected, the daemon records the failure and leaves the current live program unchanged. This organization matches the design from Section~\ref{sec:design-daemon}: the daemon is responsible for choosing rewrites, but the kernel remains responsible for deciding whether the rewritten result is legal and safe.
+
+The implementation also separates optimization logic from deployment mechanics. \tool provides one mode for controlled experiments, where the daemon applies rewrites to a chosen set of live programs and exits, and another mode for long-running deployment, where it stays active and revisits programs over time. Both modes use the same kernel interface and the same rewrite pipeline. This keeps evaluation and deployment aligned: the experiments measure the same optimization path that the system uses in practice, rather than a separate prototype-only path.

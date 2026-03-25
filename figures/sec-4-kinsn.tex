@@ -1,0 +1,46 @@
+% put these once before the figure
+\newlength{\selboxht}
+\newlength{\selouterht}
+
+\begin{figure}[t]
+\centering
+\setlength{\fboxsep}{3pt}
+\setlength{\selboxht}{1.32cm}
+\setlength{\selouterht}{\dimexpr\selboxht + 2\fboxsep + 2\fboxrule\relax}
+
+\begin{tabular}{@{}c@{\hspace{0.010\columnwidth}}c@{\hspace{0.010\columnwidth}}c@{\hspace{0.010\columnwidth}}c@{\hspace{0.010\columnwidth}}c@{}}
+\textbf{eBPF proof form} &&
+\textbf{kinsn + bindings} &&
+\textbf{native x86 code} \\[2pt]
+
+\fbox{%
+\parbox[c][\selboxht][t]{0.255\columnwidth}{%
+\ttfamily\scriptsize
+JEQ r2, 0, +2\\
+MOV r3, r4\\
+JA  +1\\
+MOV r3, r5
+}} &
+\parbox[c][\selouterht][c]{0.030\columnwidth}{\centering$\Longleftarrow$} &
+\fbox{%
+\parbox[c][\selboxht][t]{0.255\columnwidth}{%
+\ttfamily\scriptsize
+select64\\
+bindings:\\
+dst=r3\\
+t=r4, f=r5\\
+cond=r2
+}} &
+\parbox[c][\selouterht][c]{0.030\columnwidth}{\centering$\Longrightarrow$} &
+\fbox{%
+\parbox[c][\selboxht][t]{0.255\columnwidth}{%
+\ttfamily\scriptsize
+mov    r3, r5\\
+test   r2, r2\\
+cmovne r3, r4
+}} \\
+\end{tabular}
+
+\caption{\texttt{select64} in three related forms. The middle panel separates the kinsn instruction from its operand bindings; in the implementation, these bindings are encoded in a sidecar. Instantiating the middle form yields the eBPF proof form on the left, while lowering the same form yields the native x86 code on the right.}
+\label{fig:select64-kinsn}
+\end{figure}

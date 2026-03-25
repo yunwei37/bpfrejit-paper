@@ -1,0 +1,14 @@
+\begin{table}[t]
+  \centering
+  \caption{Code-quality gap between an LLVM-based BPF code generator and the current kernel JIT on 31 pure-JIT microbenchmarks. Ratios are LLVM / Kernel, so smaller is better.}
+  \label{tab:motivation_gap_summary}
+  \small
+  \begin{tabular}{lrrr}
+    \toprule
+    Metric & Geomean & Better Cases & Interpretation \\
+    \midrule
+    Execution time & 0.849$\times$ & 21 / 31 & LLVM-based generation is faster overall \\
+    Code size      & 0.496$\times$ & 31 / 31 & LLVM-based generation is smaller on every benchmark \\
+    \bottomrule
+  \end{tabular}
+\end{table}

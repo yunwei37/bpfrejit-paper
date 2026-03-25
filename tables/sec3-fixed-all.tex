@@ -1,0 +1,17 @@
+\begin{table}[t]
+  \centering
+  \caption{A fixed-all kernel still causes execution regressions even when code size improves.}
+  \label{tab:motivation_fixed_all}
+  \small
+  \begin{tabular}{lrrr}
+    \toprule
+    Program & Exec.\ $\Delta$ & Code $\Delta$ & Interpretation \\
+    \midrule
+    \texttt{rotate64\_hash}     & $-16.8\%$ & $-1{,}178$\,B & Speedup \\
+    \texttt{pkt\_rss\_hash}     & $-14.9\%$ & $-151$\,B     & Speedup \\
+    \texttt{load\_byte\_recomp} & $-13.0\%$ & $-12$\,B      & Speedup \\
+    \texttt{stride\_load\_16}   & \textbf{+14.2\%} & $-30$\,B & Regression \\
+    \texttt{log2\_fold}         & \textbf{+28.3\%} & $-2$\,B  & Regression \\
+    \bottomrule
+  \end{tabular}
+\end{table}

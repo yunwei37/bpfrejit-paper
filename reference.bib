@@ -12,30 +12,47 @@ series = {OSDI '25}
 }
 
 @inproceedings{k2,
-  author    = {Jia, Xiaoxi and Bao, Shuang and Tan, Wenchao and Zhao, Jin and Yu, Dongdong and Liu, Weicong and Pei, Junjie and Zhang, Yanzhen and Song, Shenghao and others},
-  title     = {{K2}: Vetting {Superoptimizations} via {BPF} {Safety} {Analysis}},
-  booktitle = {Proceedings of the 2021 ACM SIGCOMM Conference},
-  year      = {2021},
-  pages     = {261--275},
-  publisher = {ACM},
+author = {Xu, Qiongwen and Wong, Michael D. and Wagle, Tanvi and Narayana, Srinivas and Sivaraman, Anirudh},
+title = {Synthesizing safe and efficient kernel extensions for packet processing},
+year = {2021},
+isbn = {9781450383837},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/3452296.3472929},
+doi = {10.1145/3452296.3472929},
+booktitle = {Proceedings of the 2021 ACM SIGCOMM 2021 Conference},
+pages = {50–64},
+numpages = {15},
+keywords = {synthesis, stochastic optimization, endpoint packet processing, BPF},
+location = {Virtual Event, USA},
+series = {SIGCOMM '21}
 }
 
 @inproceedings{merlin,
-  author    = {Chen, Zhaolong and Tao, Luo and Ye, Ding and others},
-  title     = {{Merlin}: Optimizing {eBPF} Programs on {LLVM} {IR}},
-  booktitle = {Proceedings of the 29th International Conference on Architectural Support for Programming Languages and Operating Systems (ASPLOS)},
-  year      = {2024},
-  publisher = {ACM},
+author = {Mao, Jinsong and Ding, Hailun and Zhai, Juan and Ma, Shiqing},
+title = {Merlin: Multi-tier Optimization of eBPF Code for Performance and Compactness},
+year = {2024},
+isbn = {9798400703867},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/3620666.3651387},
+doi = {10.1145/3620666.3651387},
+booktitle = {Proceedings of the 29th ACM International Conference on Architectural Support for Programming Languages and Operating Systems, Volume 3},
+pages = {639–653},
+numpages = {15},
+keywords = {eBPF optimization, LLVM},
+location = {La Jolla, CA, USA},
+series = {ASPLOS '24}
 }
 
-@inproceedings{epso,
-  author    = {Li, Jia and Wu, Zhuo and others},
-  title     = {{EPSO}: {Extended} {BPF} Program Superoptimization},
-  booktitle = {Proceedings of the 40th IEEE/ACM International Conference on Automated Software Engineering (ASE)},
-  year      = {2025},
-  pages     = {1--12},
-  publisher = {IEEE},
-  address   = {Los Alamitos, CA, USA},
+@misc{epso,
+      title={EPSO: A Caching-Based Efficient Superoptimizer for BPF Bytecode}, 
+      author={Qian Zhu and Yuxuan Liu and Ziyuan Zhu and Shangqing Liu and Lei Bu},
+      year={2025},
+      eprint={2511.15589},
+      archivePrefix={arXiv},
+      primaryClass={cs.SE},
+      url={https://arxiv.org/abs/2511.15589}, 
 }
 
 @inproceedings{ebpf_sosp,
@@ -144,6 +161,15 @@ series = {OSDI '25}
   year      = {2024},
   howpublished = {\url{https://github.com/libbpf/bpftool}},
 }
+
+@misc{verifier,
+  author    = {The kernel development community},
+  title     = {eBPF verifier},
+  year      = {2026},
+  howpublished = {\url{https://docs.kernel.org/bpf/verifier.html}},
+}
+
+
 
 @inproceedings{stoke,
   author    = {Schkufza, Eric and Sharma, Rahul and Aiken, Alex},
@@ -264,4 +290,249 @@ series = {OSDI '25}
   booktitle = {Proceedings of the 30th ACM Symposium on Operating Systems Principles (SOSP)},
   year      = {2025},
   publisher = {ACM},
+}
+
+
+
+@inproceedings{gershuni2019simple,
+author = {Gershuni, Elazar and Amit, Nadav and Gurfinkel, Arie and Narodytska, Nina and Navas, Jorge A. and Rinetzky, Noam and Ryzhyk, Leonid and Sagiv, Mooly},
+title = {Simple and precise static analysis of untrusted Linux kernel extensions},
+year = {2019},
+isbn = {9781450367127},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/3314221.3314590},
+doi = {10.1145/3314221.3314590},
+booktitle = {Proceedings of the 40th ACM SIGPLAN Conference on Programming Language Design and Implementation},
+pages = {1069–1084},
+numpages = {16},
+keywords = {ebpf, kernel extensions, linux, static analysis},
+location = {Phoenix, AZ, USA},
+series = {PLDI 2019}
+}
+
+@inproceedings{vishwanathan2023verifying,
+author = {Vishwanathan, Harishankar and Shachnai, Matan and Narayana, Srinivas and Nagarakatte, Santosh},
+title = {Verifying the Verifier: eBPF Range Analysis Verification},
+year = {2023},
+isbn = {978-3-031-37708-2},
+publisher = {Springer-Verlag},
+address = {Berlin, Heidelberg},
+url = {https://doi.org/10.1007/978-3-031-37709-9_12},
+doi = {10.1007/978-3-031-37709-9_12},
+booktitle = {Computer Aided Verification: 35th International Conference, CAV 2023, Paris, France, July 17–22, 2023, Proceedings, Part III},
+pages = {226–251},
+numpages = {26},
+keywords = {eBPF, Kernel extensions, Program synthesis, Program verification, Abstract interpretation},
+location = {Paris, France}
+}
+
+@inproceedings {sun2024validating,
+author = {Hao Sun and Zhendong Su},
+title = {Validating the {eBPF} Verifier via State Embedding},
+booktitle = {18th USENIX Symposium on Operating Systems Design and Implementation (OSDI 24)},
+year = {2024},
+isbn = {978-1-939133-40-3},
+address = {Santa Clara, CA},
+pages = {615--628},
+url = {https://www.usenix.org/conference/osdi24/presentation/sun-hao},
+publisher = {USENIX Association},
+month = jul
+}
+
+@inproceedings{sun2025prove,
+author = {Sun, Hao and Su, Zhendong},
+title = {Prove It to the Kernel: Precise Extension Analysis via Proof-Guided Abstraction Refinement},
+year = {2025},
+isbn = {9798400718700},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/3731569.3764796},
+doi = {10.1145/3731569.3764796},
+booktitle = {Proceedings of the ACM SIGOPS 31st Symposium on Operating Systems Principles},
+pages = {736–751},
+numpages = {16},
+location = {Lotte Hotel World, Seoul, Republic of Korea},
+series = {SOSP '25}
+}
+
+@inproceedings{wu2025vep,
+author = {Wu, Xiwei and Feng, Yueyang and Huang, Tianyi and Lu, Xiaoyang and Lin, Shengkai and Xie, Lihan and Zhao, Shizhen and Cao, Qinxiang},
+title = {VEP: a two-stage verification tool chain for full eBPF programmability},
+year = {2025},
+isbn = {978-1-939133-46-5},
+publisher = {USENIX Association},
+address = {USA},
+booktitle = {Proceedings of the 22nd USENIX Symposium on Networked Systems Design and Implementation},
+articleno = {16},
+numpages = {23},
+location = {Philadelphia, PA, USA},
+series = {NSDI '25}
+}
+
+@inproceedings{jia2025rex,
+  title     = {Rex: Closing the language-verifier gap with safe and usable kernel extensions},
+  author    = {Jinghao Jia and Ruowen Qin and Milo Craun and Egor Lukiyanov and Ayush Bansal and Minh Phan and Michael V. Le and Hubertus Franke and Hani Jamjoom and Tianyin Xu and Dan Williams},
+  booktitle = {Proceedings of the 2025 USENIX Annual Technical Conference (USENIX ATC '25)},
+  year      = {2025},
+  publisher = {USENIX Association},
+  url       = {https://www.usenix.org/conference/atc25/presentation/jia}
+}
+
+@inproceedings{dwivedi2024fast,
+author = {Dwivedi, Kumar Kartikeya and Iyer, Rishabh and Kashyap, Sanidhya},
+title = {Fast, Flexible, and Practical Kernel Extensions},
+year = {2024},
+isbn = {9798400712517},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/3694715.3695950},
+doi = {10.1145/3694715.3695950},
+booktitle = {Proceedings of the ACM SIGOPS 30th Symposium on Operating Systems Principles},
+pages = {249–264},
+numpages = {16},
+location = {Austin, TX, USA},
+series = {SOSP '24}
+}
+
+@inproceedings{nelson2020specification,
+author = {Nelson, Luke and Van Geffen, Jacob and Torlak, Emina and Wang, Xi},
+title = {Specification and verification in the field: applying formal methods to BPF just-in-time compilers in the Linux kernel},
+year = {2020},
+isbn = {978-1-939133-19-9},
+publisher = {USENIX Association},
+address = {USA},
+booktitle = {Proceedings of the 14th USENIX Conference on Operating Systems Design and Implementation},
+articleno = {3},
+numpages = {21},
+series = {OSDI'20}
+}
+
+@misc{xiang2025epass,
+  author       = {Yiming Xiang and Wanning He and Mehbubul Hasan Al-Quvi and Emmett Witchel and Ryan Huang},
+  title        = {{ePass}: A Framework for Enhancing Flexibility and
+                  Runtime Safety of {eBPF} Programs},
+  howpublished = {Linux Plumbers Conference (LPC)},
+  month        = dec,
+  year         = {2025},
+  url          = {https://lpc.events/event/19/contributions/2179/}
+}
+
+@inproceedings{wang2014jitk,
+author = {Wang, Xi and Lazar, David and Zeldovich, Nickolai and Chlipala, Adam and Tatlock, Zachary},
+title = {Jitk: a trustworthy in-kernel interpreter infrastructure},
+year = {2014},
+isbn = {9781931971164},
+publisher = {USENIX Association},
+address = {USA},
+booktitle = {Proceedings of the 11th USENIX Conference on Operating Systems Design and Implementation},
+pages = {33–47},
+numpages = {15},
+location = {Broomfield, CO},
+series = {OSDI'14}
+}
+
+@inproceedings{lyu2025ebpf,
+author = {Lyu, Tao and Dwivedi, Kumar Kartikeya and Bourgeat, Thomas and Payer, Mathias and Xu, Meng and Kashyap, Sanidhya},
+title = {eBPF Misbehavior Detection: Fuzzing with a Specification-Based Oracle},
+year = {2025},
+isbn = {9798400718700},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/3731569.3764797},
+doi = {10.1145/3731569.3764797},
+booktitle = {Proceedings of the ACM SIGOPS 31st Symposium on Operating Systems Principles},
+pages = {701–718},
+numpages = {18},
+location = {Lotte Hotel World, Seoul, Republic of Korea},
+series = {SOSP '25}
+}
+
+@inproceedings{peng2024toss,
+author = {Peng, Chaoyuan and Jiang, Muhui and Wu, Lei and Zhou, Yajin},
+title = {Toss a Fault to BpfChecker: Revealing Implementation Flaws for eBPF runtimes with Differential Fuzzing},
+year = {2024},
+isbn = {9798400706363},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/3658644.3690237},
+doi = {10.1145/3658644.3690237},
+booktitle = {Proceedings of the 2024 on ACM SIGSAC Conference on Computer and Communications Security},
+pages = {3928–3942},
+numpages = {15},
+keywords = {EBPF, differential fuzzing, software security},
+location = {Salt Lake City, UT, USA},
+series = {CCS '24}
+}
+
+@inproceedings{gerhorst2024verifence,
+author = {Gerhorst, Luis and Herzog, Henriette and W\"{a}gemann, Peter and Ott, Maximilian and Kapitza, R\"{u}diger and H\"{o}nig, Timo},
+title = {VeriFence: Lightweight and Precise Spectre Defenses for Untrusted Linux Kernel Extensions},
+year = {2024},
+isbn = {9798400709593},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/3678890.3678907},
+doi = {10.1145/3678890.3678907},
+booktitle = {Proceedings of the 27th International Symposium on Research in Attacks, Intrusions and Defenses},
+pages = {644–659},
+numpages = {16},
+keywords = {High-Performance Networking, Transient Execution Attacks, eBPF},
+location = {Padua, Italy},
+series = {RAID '24}
+}
+
+@misc{lim2023unleashing,
+      title={Unleashing Unprivileged eBPF Potential with Dynamic Sandboxing}, 
+      author={Soo Yee Lim and Xueyuan Han and Thomas Pasquier},
+      year={2023},
+      eprint={2308.01983},
+      archivePrefix={arXiv},
+      primaryClass={cs.OS},
+      url={https://arxiv.org/abs/2308.01983}, 
+}
+
+@inproceedings{soo2024safebpf,
+author = {Lim, Soo Yee and Prasad, Tanya and Han, Xueyuan and Pasquier, Thomas},
+title = {SafeBPF: Hardware-assisted Defense-in-depth for eBPF Kernel Extensions},
+year = {2024},
+isbn = {9798400712340},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/3689938.3694781},
+doi = {10.1145/3689938.3694781},
+booktitle = {Proceedings of the 2024 on Cloud Computing Security Workshop},
+pages = {80–94},
+numpages = {15},
+keywords = {ebpf, mte, sandboxing},
+location = {Salt Lake City, UT, USA},
+series = {CCSW '24}
+}
+
+@inproceedings {jin2024beebox,
+author = {Di Jin and Alexander J. Gaidis and Vasileios P. Kemerlis},
+title = {{BeeBox}: Hardening {BPF} against Transient Execution Attacks},
+booktitle = {33rd USENIX Security Symposium (USENIX Security 24)},
+year = {2024},
+isbn = {978-1-939133-44-1},
+address = {Philadelphia, PA},
+pages = {613--630},
+url = {https://www.usenix.org/conference/usenixsecurity24/presentation/jin-di},
+publisher = {USENIX Association},
+month = aug
+}
+
+@misc{linuxkernel_bpf_verifier,
+  author       = {{The Linux Kernel Community}},
+  title        = {{eBPF} Verifier},
+  howpublished = {The Linux Kernel Documentation},
+  url          = {https://docs.kernel.org/bpf/verifier.html},
+  note         = {Accessed: 2025-03-25}
+}
+
+@misc{ebpf_jit,
+  author       = {{eBPF.io Authors}},
+  title        = {What is {eBPF}? --- {JIT} Compilation},
+  howpublished = {\url{https://ebpf.io/what-is-ebpf/\#jit-compilation}},
+  note         = {Accessed: 2025-03-25}
 }

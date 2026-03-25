@@ -1,0 +1,60 @@
+%%%%%%%%%%%% Outline %%%%%%%%%%%%%%%%%%
+
+% section 2
+% message<Background introduces the standard eBPF path and then places \tool against modern optimization pipelines.>
+
+% section 2.1
+% message<eBPF is Linux's standard path for loading restricted programs into the kernel.>
+% one paragraph only
+% explain: source -> LLVM toolchain -> eBPF bytecode -> bpf(BPF_PROG_LOAD) -> verifier -> interpreter/JIT -> attach -> execution
+% figure: stock pipeline only
+% no daemon
+% no trust-boundary claim
+% no workload/adoption examples already covered in the introduction
+
+% section 2.2
+% message<Modern runtimes separate validation and optimization in different ways.>
+% paragraph 1: JVM / Wasm / LLVM optimization pipeline at a high level
+% paragraph 2: where their trust boundary differs from \tool
+% keep the comparison high-level; do not turn background into related work
+
+%%%%%%%%%%%% Outline %%%%%%%%%%%%%%%%%%
+
+\section{Background}
+\label{sec:background}
+
+\subsection{eBPF}
+\label{subsec:ebpf}
+
+% 1 BPF Instruction Set Architecture (ISA) — https://docs.kernel.org/bpf/standardization/instruction-set.html
+% eBPF Syscall — https://docs.kernel.org/userspace-api/ebpf/syscall.html
+% eBPF verifier — https://docs.kernel.org/bpf/verifier.html
+% Documentation for /proc/sys/net/ — https://docs.kernel.org/admin-guide/sysctl/net.html
+eBPF is Linux's mechanism for running user-defined programs at kernel hooks under verifier-enforced restrictions. Figure~\ref{fig:ebpf} shows the standard path from userspace compilation to in-kernel execution. A program is first compiled in userspace into eBPF bytecode and then submitted through \texttt{bpf(BPF\_PROG\_LOAD)} syscall. The kernel verifier checks the submitted bytecode before installation. It validates the control-flow graph, simulates all execution paths, and tracks register and stack state to ensure safe memory access and valid use of kernel interfaces~\cite{linuxkernel_bpf_verifier}. After a program is accepted, it is attached to the hook defined by its program and attach types. When JIT is enabled, the kernel then translates the accepted bytecode into native instructions before execution~\cite{ebpf_jit}. Later packets or kernel events invoke that installed program body.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\linewidth]{figures/sec-2-ebpf.png}
+  \caption{eBPF execution model. \note{placeholder figure. redraw}}
+  \label{fig:ebpf}
+\end{figure}
+
+\subsection{Optimization Pipelines in Modern Systems}
+\label{subsec:modern-pipelines}
+
+% Chapter 5. Loading, Linking, and Initializing — https://docs.oracle.com/javase/specs/jvms/se23/html/jvms-5.html
+% Java HotSpot Virtual Machine Performance Enhancements — https://docs.oracle.com/en/java/javase/24/vm/java-hotspot-virtual-machine-performance-enhancements.html
+% HotSpot Runtime Overview — https://openjdk.org/groups/hotspot/docs/RuntimeOverview.html
+% Module in wasmtime - Rust — https://docs.wasmtime.dev/api/wasmtime/struct.Module.html
+% Architecture - Wasmtime — https://docs.wasmtime.dev/contributing-architecture.html
+% Using the New Pass Manager — https://llvm.org/docs/NewPassManager.html
+% Building a JIT: Adding Optimizations — https://llvm.org/docs/tutorial/BuildingAJIT2.html
+% LLVM Language Reference Manual — https://llvm.org/docs/LangRef.html
+Modern runtimes and compiler frameworks both stage validation before optimization. Managed runtimes place validation at program admission, whereas compiler frameworks place verification inside the compilation pipeline. The JVM verifies class files during linking and then uses profiling-guided tiered compilation to optimize hot methods at runtime~\cite{jvm_hotspot}. A WebAssembly runtime first validates a module and then compiles the validated module through an engine-specific backend~\cite{wasmtime}. LLVM uses the compiler-oriented form of the same pattern~\cite{llvm}. LLVM checks whether IR is well formed and then runs analysis and transformation passes through a modular optimization pipeline, including JIT-time transform layers in ORC.
+
+% HotSpot Glossary of Terms — https://openjdk.org/groups/hotspot/docs/HotSpotGlossary.html
+% JEP 243: Java-Level JVM Compiler Interface — https://openjdk.org/jeps/243
+% Architecture - Wasmtime — https://docs.wasmtime.dev/contributing-architecture.html
+% Config in wasmtime - Rust — https://docs.wasmtime.dev/api/wasmtime/struct.Config.html
+% LLVM Language Reference Manual — https://llvm.org/docs/LangRef.html
+JVM and WebAssembly runtimes use validation as an admission check on programs entering a managed execution environment, whereas LLVM uses verification as an internal consistency check within the compiler pipeline. In the JVM and in WebAssembly runtimes, optimization remains part of the runtime implementation after code admission. In LLVM, extensibility centers on transformation passes and JIT layers, while verification remains a check on IR structure rather than a gate on generated code.

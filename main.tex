@@ -1,6 +1,6 @@
 \documentclass[sigplan,10pt,anonymous]{acmart}
 \renewcommand\footnotetextcopyrightpermission[1]{}
-\input{packages}
+\input{helpers/packages}
 %%
 %% \BibTeX command to typeset BibTeX logo in the docs
 \AtBeginDocument{%
@@ -88,11 +88,11 @@
   \country{USA}}
 \email{zhengjie@vt.edu}
 
-\author{Dan Williams}
+\author{Hao Sun*}
 \affiliation{%
-  \institution{Virginia Tech}
-  \country{USA}}
-\email{djwillia@vt.edu}
+  \institution{ETH Zurich}
+  \country{xx}}
+\email{xx}
 
 \author{Andi Quinn}
 \affiliation{%
@@ -100,6 +100,11 @@
   \country{USA}}
 \email{aquinn1@ucsc.edu}
 
+\author{Dan Williams}
+\affiliation{%
+  \institution{Virginia Tech}
+  \country{USA}}
+\email{djwillia@vt.edu}
 
 %%
 %% By default, the full list of authors will be used in the page
@@ -113,7 +118,7 @@
 %% The abstract is a short summary of the work to be presented in the
 %% article.
 
-\input{commands}
+\input{helpers/commands}
 \input{sections/0-abstract}
 
 %%
@@ -168,14 +173,15 @@
 \pagestyle{plain}
 
 \input{sections/1-introduction}
-\input{sections/2-background-and-motivation}
-\input{sections/3-design}
-\input{sections/4-implementation}
-\input{sections/5-evaluation}
-\input{sections/6-discussion}
-\input{sections/7-related-work}
-\input{sections/8-conclusion}
-\input{sections/9-appendix}
+\input{sections/2-background}
+\input{sections/3-motivation}
+\input{sections/4-kinsn}
+\input{sections/5-rejit}
+\input{sections/6-implementation}
+\input{sections/7-evaluation}
+% \input{sections/8-discussion}
+\input{sections/9-related-work}
+\input{sections/10-conclusion}
 
 %%
 %% The next two lines define the bibliography style to be used, and
@@ -183,7 +189,7 @@
 \bibliographystyle{ACM-Reference-Format}
 \bibliography{reference}
 
-% \input{sections/9-appendix}
+% \input{sections/11-appendix}
 
 \end{document}
 \endinput

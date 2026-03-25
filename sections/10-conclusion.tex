@@ -1,0 +1,15 @@
+%%%%%%%%%%%%Outline%%%%%%%%%%%%%%%%%%
+
+%%%
+% message<\tool closes the deployed-program optimization gap in eBPF.>
+% restate the problem from the introduction: prior systems optimize before or during loading, but cannot transparently revisit already-loaded live programs with post-deployment information
+% summarize the solution at a high level: minimal in-kernel support for recovery, re-verification, and replacement, plus a userspace daemon and kinsn
+% summarize what the evaluation shows: preserves safety and deployment compatibility while improving performance and code size with low recompilation overhead
+% end with the final takeaway: post-load optimization of live eBPF programs is practical in the current Linux model
+
+%%%%%%%%%%%%Outline%%%%%%%%%%%%%%%%%%
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+In this paper, we identified a gap in the current eBPF stack: existing optimization techniques improve programs before or during loading, but they do not transparently revisit already-loaded live programs using post-deployment behavior. We presented \tool, a dynamic and extensible framework that closes this gap through minimal in-kernel support for recovering, re-verifying, and replacing loaded programs, together with a userspace daemon for runtime-guided rewriting and \emph{kinsn} for backend-aware instruction support. Our evaluation across policy-sensitive microbenchmarks, real-program corpora, and end-to-end workloads shows that \tool preserves the stock BPF safety model and existing deployment paths while delivering better performance, smaller code, and low recompilation overhead. These results show that post-load optimization of live eBPF programs is practical and effective within the current Linux deployment model.

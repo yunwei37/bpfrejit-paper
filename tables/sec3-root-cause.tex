@@ -1,0 +1,17 @@
+\begin{table}[t]
+  \centering
+  \caption{Dominant sources of native-code surplus in the current kernel JIT.}
+  \label{tab:motivation_root_causes}
+  \small
+  \begin{tabular}{lr}
+    \toprule
+    Mechanism & Share of Surplus \\
+    \midrule
+    Byte-load recomposition         & 50.7\% \\
+    Absent conditional moves        & 19.9\% \\
+    Fixed callee-saved register use & 18.5\% \\
+    \midrule
+    Total explained                 & 89.1\% \\
+    \bottomrule
+  \end{tabular}
+\end{table}

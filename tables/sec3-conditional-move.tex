@@ -1,0 +1,16 @@
+\begin{table}[t]
+  \centering
+  \caption{Conditional-move profitability depends on workload behavior. Positive deltas mean that disabling \texttt{cmov} is worse; negative deltas mean that disabling \texttt{cmov} is better.}
+  \label{tab:motivation_cmov}
+  \small
+  \begin{tabular}{lrrr}
+    \toprule
+    Benchmark & Normal & No-\texttt{cmov} & $\Delta$ \\
+    \midrule
+    \texttt{switch\_dispatch}  & 213\,ns & 269\,ns & \textbf{+26.3\%} \\
+    \texttt{binary\_search}    & 205\,ns & 229\,ns & \textbf{+11.7\%} \\
+    \texttt{bounds\_ladder}    & 83\,ns  & 68\,ns  & $-18.1\%$ \\
+    \texttt{large\_mixed\_500} & 415\,ns & 316\,ns & $-23.9\%$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}

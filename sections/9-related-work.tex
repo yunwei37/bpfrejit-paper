@@ -1,0 +1,53 @@
+%%%%%%%%%%%%Outline%%%%%%%%%%%%%%%%%%
+
+%%%
+% message<Our closest neighbors in verification and extensibility change how BPF extensions are admitted, validated, hardened, or exposed, not how already-accepted live programs are optimized.>
+% first cluster: prior work strengthens load-time reasoning through more precise analysis, proof-carrying acceptance, or two-stage verification
+% second cluster: prior work increases trust in the execution pipeline by validating, fuzzing, or hardening the verifier, JIT, and runtime
+% third cluster: prior work broadens the extension model itself through load-time pass extensibility or safer extension interfaces
+% closing: these systems make extension admission or execution safer and more expressive; \tool instead leaves the stock path intact and revisits live programs post-load
+
+%%%
+% message<Our other direct neighbors optimize BPF code before deployment, not after deployment.>
+% first cluster: search-based systems optimize object-level bytecode through superoptimization or reusable rewrite rules
+% second cluster: compiler-style systems lift BPF into richer IRs for broader static optimization
+% shared boundary: these systems assume build/load-path control and access to the original .bpf.o, so they cannot transparently revisit already-loaded programs or exploit post-deployment behavior
+% closing: \tool complements them by optimizing at a different lifecycle point: post-load, on live programs, with runtime guidance and backend-aware kernel instruction support
+
+%%%%%%%%%%%%Outline%%%%%%%%%%%%%%%%%%
+
+\section{Related Work}
+\label{sec:related-work}
+
+% Simple and Precise Static Analysis of Untrusted Linux Kernel Extensions -- https://doi.org/10.1145/3314221.3314590
+% Verifying the Verifier: eBPF Range Analysis Verification -- https://doi.org/10.1007/978-3-031-37709-9_12
+% Validating the eBPF Verifier via State Embedding -- https://www.usenix.org/conference/osdi24/presentation/sun-hao
+% BCF: Certificate-Backed BPF Verification -- https://doi.org/10.1145/3731569.3764796
+% VEP: a two-stage verification tool chain for full eBPF programmability -- https://www.usenix.org/conference/nsdi25/presentation/wu-xiwei
+% Specification and verification in the field: applying formal methods to BPF just-in-time compilers in the Linux kernel -- https://www.usenix.org/conference/osdi20/presentation/nelson
+% Jitk: a trustworthy in-kernel interpreter infrastructure -- https://www.usenix.org/conference/osdi14/technical-sessions/presentation/wang_xi
+% eBPF Misbehavior Detection: Fuzzing with a Specification-Based Oracle -- https://doi.org/10.1145/3731569.3764797
+% Toss a Fault to BpfChecker: Revealing Implementation Flaws for eBPF runtimes with Differential Fuzzing -- https://doi.org/10.1145/3658644.3690237
+% VeriFence: Lightweight and Precise Spectre Defenses for Untrusted Linux Kernel Extensions -- https://doi.org/10.1145/3678890.3678907
+% Unleashing Unprivileged eBPF Potential with Dynamic Sandboxing -- https://arxiv.org/abs/2308.01983
+% SafeBPF: Hardware-assisted Defense-in-depth for eBPF Kernel Extensions -- https://doi.org/10.1145/3689938.3694781
+% ePass: Extensible BPF Optimization Passes in the Kernel -- LPC 2025
+% Rex: Closing the language-verifier gap with safe and usable kernel extensions -- https://www.usenix.org/conference/atc25/presentation/jia
+% Fast, Flexible, and Practical Kernel Extensions -- https://doi.org/10.1145/3694715.3695950
+% Extending Applications Safely and Efficiently -- https://www.usenix.org/conference/osdi25/presentation/zheng-yusheng
+\noindent\textbf{Verification and extensibility.}
+Prior work on eBPF verification and extensibility primarily changes how extensions are admitted, validated, hardened, or exposed, rather than how already-accepted live programs are optimized. One line of work strengthens reasoning in the load path through more precise analysis, proof-carrying acceptance, or two-stage verification~\cite{gershuni2019simple,sun2024validating,wu2025vep,bcf,vishwanathan2023verifying}.
+%
+A second line increases trust in the execution pipeline by validating, fuzzing, or hardening the verifier, JIT, and runtime~\cite{nelson2020specification,wang2014jitk,lyu2025ebpf,peng2024toss,gerhorst2024verifence,lim2023unleashing,soo2024safebpf,jin2024beebox}.
+%
+Closest to our implementation concerns, ePass makes the BPF load path extensible through in-kernel passes, while Rex and other recent extension systems broaden the safe extension interface itself~\cite{epass,jia2025rex,dwivedi2024fast,zheng2025extending}. 
+%
+These systems make extension admission or execution safer and more expressive; \tool instead keeps the stock Linux verifier/JIT path intact and revisits already-loaded live programs for transparent post-load re-optimization.
+
+% K2: Synthesizing safe and efficient kernel extensions for packet processing -- https://doi.org/10.1145/3452296.3472929
+% Merlin: Multi-tier Optimization of eBPF Code for Performance and Compactness -- https://doi.org/10.1145/3620666.3651387
+% EPSO: A Caching-Based Efficient Superoptimizer for BPF Bytecode -- https://arxiv.org/abs/2511.15589
+\noindent\textbf{BPF code optimization.}
+Prior direct BPF optimization work instead improves object-level bytecode before deployment. Search-based systems such as K2 and EPSO optimize BPF by discovering better instruction sequences or reusable rewrite rules~\cite{k2,epso}. Merlin attacks the same problem through a richer compiler pipeline, lifting BPF into LLVM IR to enable broader static optimization~\cite{merlin}. 
+%
+Despite these technical differences, all these systems share the same optimization point: they assume build- or load-path control and access to the original \texttt{.bpf.o}, so they cannot transparently revisit programs that were already loaded by third-party tools or exploit runtime behavior that emerges only after deployment~\cite{k2,merlin,epso}. \tool is complementary because it optimizes at a different point in the lifecycle: post-load, on live programs, with runtime guidance and backend-aware kernel instruction support.
