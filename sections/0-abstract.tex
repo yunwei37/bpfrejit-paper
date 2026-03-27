@@ -6,6 +6,35 @@ eBPF is widely adopted in production for observability, networking, and customiz
 
 %%%%%%%%%%%%Outline%%%%%%%%%%%%%%%%%%
 
+
+%%%%%%%%%%%%% PREVIOUS VERSION (kinsn-centric framing) — kept for comparison %%%%%%%%%%%%%
+%
+% \begin{abstract}
+%
+% Kernel extensions such as eBPF are widely used in performance and safety-critical paths. In the standard deployment path, programs are compiled to ordinary eBPF bytecode, verified in the kernel, and JIT-compiled to native code before execution. The same ordinary eBPF bytecode therefore serves both as the verifier's proof form and as the JIT's input to native code generation.
+% %
+% This bytecode form is good for verifier reasoning, but it erases optimization-relevant semantics before a program reaches the kernel. To preserve those semantics without complicating the in-kernel JIT, we need to separate the bytecode used for optimization from the bytecode used for verification. We propose \tool, a dynamic recompilation framework that realizes this separation.
+% %
+% \tool introduces kinsn, an extensible optimization-facing ISA whose instructions canonically expand to ordinary eBPF for kernel verification and lower directly to efficient native code. Optimization runs in userspace over kinsn, while the kernel reuses the existing verifier, re-JITs accepted rewrites, and installs them in place.
+% %
+% Our evaluation shows that \tool improves performance and reduces code size across diverse workloads with low recompilation overhead. We further demonstrate its effectiveness across architectures and its ability to preserve safety through fail-safe execution and security-oriented case studies.
+%
+% \end{abstract}
+%
+% STRENGTHS of this version:
+% - "same ordinary eBPF bytecode serves both as the verifier's proof form and as the JIT's input" — crisp observation
+% - "separate the bytecode used for optimization from the bytecode used for verification" — clean problem statement
+% - kinsn "two realizations" framing is technically precise and memorable
+% - more concise than the plan-based version
+%
+% WEAKNESSES of this version:
+% - centers entirely on kinsn, but >50% of optimizations (map_inline, const_prop, DCE, wide_mem, etc.) don't use kinsn
+% - does not mention the framework / extensibility story
+% - does not mention Safety ≠ Correctness insight
+% - does not mention runtime specialization or security hardening capabilities
+%
+%%%%%%%%%%%%% END PREVIOUS VERSION %%%%%%%%%%%%%
+
 %%%
 % message<background>
 % kernel extensions like BPF are performance and safety critical
