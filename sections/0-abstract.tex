@@ -1,3 +1,9 @@
+\begin{abstract}
+
+eBPF is widely adopted in production for observability, networking, and customizable kernel extensions in modern production systems, yet its current just-in-time (JIT) compilers remain rigid, platform-agnostic, and severely under-optimized compared to mature runtimes such as JVM, WASM, or LLVM. Many optimizations and security hardenings are restricted due to stringent kernel safety constraints and prohibitive implementation complexity. This paper presents \tool, a dynamic, minimally invasive, and extensible kernel compilation framework that transparently optimizes kernel-resident eBPF programs. Our key insight is a novel, microkernel-inspired separation of concerns that delegates kernel safety guarantees to minimal kernel extensions, allowing lightweight verification and in-place recompilation while offloading correctness and complex optimizations to an extensible userspace daemon informed by runtime profiling data. We implement \tool within the Linux kernel with fewer than 600 lines of code modifications, transparently supporting existing eBPF tools, loaders, and subsystems. Evaluation across diverse hardware platforms and representative workloads (network monitoring, security enforcement, and observability tracing) demonstrates that \tool achieves up to 40\% performance improvement, 50\% reduction in binary size, and negligible overhead. \tool provides a practical, upstream-compatible path toward dynamic, extensible compilation frameworks in operating system kernels.
+
+\end{abstract}
+
 %%%%%%%%%%%%Outline%%%%%%%%%%%%%%%%%%
 
 %%%
@@ -12,7 +18,7 @@
 
 %%%
 % message<idea>
-% needs a better defined xx, need separation 
+% needs a better defined xx, need separation
 % safety mechanism should be in kernel, optimization should be in userspace
 % advantage: better performance, less complexity in each component, does not break safety
 
@@ -28,15 +34,3 @@
 % safety
 
 %%%%%%%%%%%%Outline%%%%%%%%%%%%%%%%%%
-
-\begin{abstract}
-
-Kernel extensions such as eBPF are widely used in performance and safety-critical paths. In the standard deployment path, programs are compiled to ordinary eBPF bytecode, verified in the kernel, and JIT-compiled to native code before execution. The same ordinary eBPF bytecode therefore serves both as the verifier's proof form and as the JIT's input to native code generation. 
-%
-This bytecode form is good for verifier reasoning, but it erases optimization-relevant semantics before a program reaches the kernel. To preserve those semantics without complicating the in-kernel JIT, we need to separate the bytecode used for optimization from the bytecode used for verification. We propose \tool, a dynamic recompilation framework that realizes this separation. 
-%
-\tool introduces kinsn, an extensible optimization-facing ISA whose instructions canonically expand to ordinary eBPF for kernel verification and lower directly to efficient native code. Optimization runs in userspace over kinsn, while the kernel reuses the existing verifier, re-JITs accepted rewrites, and installs them in place. 
-%
-Our evaluation shows that \tool improves performance and reduces code size across diverse workloads with low recompilation overhead. We further demonstrate its effectiveness across architectures and its ability to preserve safety through fail-safe execution and security-oriented case studies.
-
-\end{abstract}
