@@ -1,0 +1,18 @@
+\begin{table}[t]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{p{0.34\columnwidth} p{0.26\columnwidth} p{0.26\columnwidth}}
+\toprule
+\textbf{Kinsn} & \textbf{x86} & \textbf{ARM64} \\
+\midrule
+\texttt{rotate64} & \texttt{ROL}/\texttt{ROR} & \texttt{EXTR} \\
+\texttt{select64} & \texttt{CMOV} & \texttt{CSEL} \\
+\texttt{extract64} & \texttt{BEXTR} & \texttt{UBFM} \\
+\texttt{endian\_load64} & \texttt{MOVBE} & \texttt{REV} \\
+\texttt{speculation\_barrier} & \texttt{LFENCE} & \texttt{DSB SY + ISB} \\
+\bottomrule
+\end{tabular}
+\caption{Currently implemented kinsn targets and their x86/ARM64 native lowerings.}
+\label{tab:kinsn-implemented}
+\end{table}

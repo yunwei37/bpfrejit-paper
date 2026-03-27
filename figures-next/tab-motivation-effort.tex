@@ -1,0 +1,19 @@
+% Synthetic placeholder table generated from experiment/sec-3-kernel-path/data/effort_comparison.csv
+\begin{table}[t]
+  \centering
+  \caption{Approximate engineering effort across representative optimization components. This synthetic placeholder comparison emphasizes that broad optimization logic is inherently multi-thousand-line engineering and is therefore a poor fit for the privileged in-kernel compilation path.}
+  \label{tab:motivation-effort}
+  \scriptsize
+  \begin{tabular}{p{1.85cm}p{1.5cm}rp{1.85cm}}
+    \toprule
+    Component & Boundary & Approx. LOC & Role \\
+    \midrule
+    LLVM InstCombine & Userspace compiler & 17.8K & broad IR simplification \\
+    LLVM SimplifyCFG & Userspace compiler & 4.3K & CFG cleanup and branch canonicalization \\
+    LLVM DAGCombiner & Userspace compiler & 12.6K & target-aware instruction combining \\
+    Kernel verifier/JIT rewrite path & Privileged kernel path & 1.6K & safety-critical transformation logic \\
+    BpfReJIT pass families & Userspace daemon & 0.9K & rotate/extract/byte-recompose rewrites \\
+    BpfReJIT runtime policy loop & Userspace daemon & 0.5K & profile-guided rewrite selection \\
+    \bottomrule
+  \end{tabular}
+\end{table}

@@ -1,0 +1,93 @@
+%%%%%%%%%%%% Outline %%%%%%%%%%%%%%%%%%
+
+% Section 2.1: eBPF JIT
+
+%%%
+% message<eBPF background needed for the motivation>
+% userspace compiles BPF C to ordinary eBPF bytecode
+% the program is loaded through BPF_PROG_LOAD
+% the verifier checks safety on ordinary eBPF at load time
+% accepted bytecode is JIT-compiled to native code at load time
+% the resulting native code executes later when the hook fires
+% Figure 1 should emphasize the load-time / runtime split and omit unrelated kernel details
+
+% Section 2.2: Motivating Example: 64-bit Rotate
+
+%%%
+% message<a rotate is one semantic operation that the target ISA can express directly>
+% motivating example: a 64-bit rotate in a hash-style computation
+% at the source level, the computation is "rotate left by a constant"
+% LLVM can still see that semantic operation
+% on x86, LLVM lowers it directly to a rol instruction
+% this is the code shape the target ISA already wants
+
+%%%
+% message<the current eBPF path erases that semantic structure before kernel lowering>
+% ordinary eBPF has no first-class rotate instruction
+% before the program reaches the kernel, the rotate has already been flattened into shifts and an or
+% the kernel JIT therefore sees only the expanded ordinary-eBPF sequence
+% it emits longer and less direct native code even though the ISA supports rotate directly
+% Figure 2 should show this contrast; the text should only state the takeaway
+
+%%%
+% message<this example highlights a tension in the current pipeline>
+% primitive bytecode is good for verification simplicity and portability
+% but that same bytecode form does not preserve all optimization-relevant source structure
+% once the structure is lost before the kernel, recovering the same code quality later requires substantially more sophistication in the in-kernel JIT
+% the issue is therefore not that ordinary eBPF is a bad verification form
+% the issue is that the verification form is also being asked to carry optimization intent
+
+%%%
+% message<key insight: optimization can use a different bytecode form than verification>
+% keep ordinary eBPF as the kernel-facing bytecode for verification
+% use a richer optimization-facing form, BPF', to preserve optimization-relevant semantics
+% BPF' can be translated simply to ordinary eBPF for verification
+% BPF' can also be lowered directly to efficient target code such as x86 rol
+% this allows complex optimization on BPF' in userspace
+% while reusing the simple verifier in kernel
+% and keeping the kernel JIT simple
+
+%%%%%%%%%%%% Outline %%%%%%%%%%%%%%%%%%
+
+\section{Background and Motivation}
+\label{sec:background-and-motivation}
+
+This section introduces the standard eBPF execution pipeline (§\ref{subsec:ebpf-jit}) and a concrete example that motivates the need for a richer bytecode ISA (§\ref{subsec:example}).
+
+\subsection{eBPF JIT}
+\label{subsec:ebpf-jit}
+
+% [addressed] \note{Yusheng: You can describe all the traditional eBPF deployment model here, like how user write code and userspace applicatio, how it's bytecode load into kernel, get verified and JITed.}
+
+Figure~\ref{fig:ebpf} shows the standard eBPF execution path. In the standard deployment path, developers write a BPF program in C, compile it in userspace with Clang/LLVM into an object file containing ordinary eBPF bytecode, and load that bytecode through the \texttt{bpf(BPF\_PROG\_LOAD)} syscall. Before the program executes in kernel context, the verifier perform various safety checks on the submitted bytecode, such as control-flow validity and memory safety~\cite{linuxkernel_bpf_verifier}. After verification, the kernel performs JIT compilation, which lowers accepted eBPF bytecode to native machine code before execution~\cite{ebpf_jit}. The compiled program is then attached to the hook defined by its program metadata. Programs are invoked at runtime by kernel events such as packet arrival.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.8\linewidth]{figures/sec-2-ebpf.pdf}
+  \caption{eBPF execution pipeline. C source is compiled to BPF bytecode, verified and JIT-compiled at load time, then executed as native x86 code at runtime via kernel hooks.}
+  \label{fig:ebpf}
+\end{figure}
+
+\subsection{Motivating Example: 64-bit Rotate}
+\label{subsec:example}
+
+The current compilation pipeline still leaves room for target-specific optimization. A simple example is a 64-bit rotate used in a hash-style computation. At the source level, the programmer expresses one semantic operation: rotate a 64-bit value left by a constant amount, as shown in Figure~\ref{fig:rotate-gap}. A userspace toolchain like LLVM optimizes this to use the accelerated \texttt{rol} instruction.
+
+% [] %note{hao: we can add a bar in this figure to separate the top and bottom and show clearly that the top part is the existing result, and the bottom is with kinsn, which requires one kinsn and two native insns only.}
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\linewidth]{figures/sec-2-example.pdf}
+    \caption{A 64-bit rotate loses semantic structure as it moves through the
+    current pipeline. The source-level rotate idiom is flattened into ordinary
+    eBPF shifts and an \texttt{or}; the current x86 JIT therefore emits a longer
+    shift/or sequence instead of the more direct \texttt{rol} idiom that the
+    target ISA already supports.}
+    \label{fig:rotate-gap}
+\end{figure}
+
+Ordinary eBPF, however, does not contain an optimized bytecode instruction, so cannot preserve that rotate as a first-class instruction. By the time the kernel JIT receives the program, the operation has already been expanded into a sequence of shifts and an \texttt{or}. As a result, the native code emitted by the JIT can be longer, less direct and less performant than the native target ISA can support.
+
+The example above illustrates a fundamental limitation of the current pipeline. Ordinary eBPF uses a primitive bytecode ISA, which keeps verifier reasoning simple and makes programs portable across architectures. But the same bytecode form does not preserve all optimization-relevant source semantics. Once operations (e.g., rotate or select) have been decomposed before entering the kernel, recovering equally efficient native code later would require substantially more analysis and target-specific logic in the in-kernel JIT. The issue, therefore, is that one bytecode form is being used both as a proof form for verification and as the input to native code generation.
+
+% [] \note{hao: we can explain this example from three angles. For the compiler, kinsn extends the instruction choices; for the verifier, kinsn is lowered to its equivalent defs (maybe show this in the figure that the verifier still sees the 'ordinary BPF'), so no additional changes to the verifier's algorithm; for jit, it implements the machanim and lowers it to native. Three angles and callbacks to our design.}
+A cleaner pipeline organization uses different bytecode ISAs for optimization and verification. We realize this organization with kinsn, an extensible, safe optimization-facing ISA, while retaining ordinary eBPF as the bytecode verified by the kernel (Section~\ref{sec:kinsn}). For verification, a kinsn program is expanded into a semantics-equivalent ordinary-eBPF program, which is then submitted to the kernel's existing verifier. This path reuses the current verification interface and keeps ordinary eBPF as the proof form checked in kernel space. For code generation, the same kinsn program is lowered directly to target code while its higher-level semantics are still explicit. This path enables the compiler to select efficient target instructions without requiring the in-kernel JIT to recover those semantics after they have been flattened. This separation allows sophisticated optimization to remain in userspace, while reusing the existing verifier in the kernel and keeping the in-kernel JIT simple.

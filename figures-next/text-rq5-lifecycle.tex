@@ -1,0 +1,7 @@
+% Synthetic placeholder prose generated from experiment/sec-5-rq5-extensibility/data/lifecycle.csv
+We exercise three lifecycle states for an optional capability module. When the
+module is loaded, the rewrite applies normally. When it is
+absent, the daemon skips the optimization and leaves the stock image unchanged. If the module is
+removed after deployment, the next optimization attempt is rejected while the current live image remains runnable. These cases show
+that optional capabilities fail gracefully rather than destabilizing the live
+deployment.

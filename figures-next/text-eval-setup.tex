@@ -1,0 +1,7 @@
+% Synthetic placeholder setup prose generated from experiment/sec-5-setup/data/setup_rows.csv
+We use three baseline points throughout the evaluation: the stock kernel JIT,
+\tool, and an LLVM-based upper bound. Our primary machine is a
+Recent x86-64 workstation-class CPU with 64 GB RAM, and we use an additional ARM64 development board for cross-architecture validation. The software baseline
+is Linux 7.0-rc2 with the BpfReJIT prototype enabled. The workload suite spans 14 supported-family microbenchmarks, a corpus of 152 live programs collected from 9 eBPF code bases,
+Tracee and Katran deployments, and safety-oriented negative and differential tests.
+Unless otherwise noted, we report 10 runs per point; medians with paired before/after comparisons.

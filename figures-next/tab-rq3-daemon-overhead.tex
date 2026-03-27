@@ -1,0 +1,21 @@
+% Synthetic placeholder table generated from experiment/sec-5-rq3-online-overhead/data/daemon_overhead.csv
+\begin{table*}[t]
+  \centering
+  \caption{Steady-state daemon cost across workloads and operating modes. \note{rq-3-exp-2}}
+  \label{tab:rq3-daemon-overhead}
+  \small
+  \begin{tabular}{llrrrr}
+    \toprule
+    Workload & Mode & Daemon CPU & RSS (MB) & Throughput $\Delta$ & Latency $\Delta$ \\
+    \midrule
+    Tracee & disabled & 0.0\% & 0 & +0.0\% & +0.0\% \\
+    Tracee & watch & 0.4\% & 18 & +0.1\% & +0.0\% \\
+    Tracee & profile & 0.7\% & 23 & -0.3\% & +0.4\% \\
+    Tracee & adaptive & 1.3\% & 31 & +4.2\% & -2.1\% \\
+    Katran & disabled & 0.0\% & 0 & +0.0\% & +0.0\% \\
+    Katran & watch & 0.3\% & 18 & +0.0\% & +0.1\% \\
+    Katran & profile & 0.6\% & 24 & -0.2\% & +0.3\% \\
+    Katran & adaptive & 1.1\% & 31 & +1.6\% & -1.4\% \\
+    \bottomrule
+  \end{tabular}
+\end{table*}

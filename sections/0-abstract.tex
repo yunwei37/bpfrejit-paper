@@ -1,58 +1,42 @@
 %%%%%%%%%%%%Outline%%%%%%%%%%%%%%%%%%
 
 %%%
-% message<kernel extensions like eBPF are used for performance and safety critical applications>
-% xx
+% message<background>
+% kernel extensions like BPF are performance and safety critical
 
 %%%
-% message<many optimization opportunities are not used>
-% - compared to llvm, current BPF JIT is not well optimized
+% message<motivation>
+% kernel compiler is hard to optimize
+% reason: tradeoff: implement optimization is heavy, kernel code is safety sensitive
+% deeper reason: boundary is not defined
 
 %%%
-% message<inherent tradeoff>
-% implement optimization is heavy
-% kernel code is safety sensitive
-% so it is impractical to implement optimization in the kernel
+% message<idea>
+% needs a better defined xx, need separation 
+% safety mechanism should be in kernel, optimization should be in userspace
+% advantage: better performance, less complexity in each component, does not break safety
 
 %%%
-% message<idea is to ==内核提供机制，用户态提供 策略==>
-% idea is to separate optimization policy and kernel
+% message<contribution>
+% framework: rewrite bpf program transparently in userspace, verify and recompile in kernel
+% kinsn: an extensible instruction substrate (kinsn) for efficient code generation
 
 %%%
-% message<we propose a dynamic, extensible framework for compiling and optimizing eBPF>
-% design:
-% - kinsn: this is the most important!
-% - userspace daemon: program analysis, optimization, and code rewriting
-% - kernel component: verification and in-place recompilation
-% advantages:
-% - usability: transparent to eBPF developers
-% - flexibility: enable flexible, dynamic optimization policies
-% - correctness: minimal invasion (fewer than 600 lines of code)
-% - safety: uphold the eBPF safety model
-
-%%%
-% message<evaluation shows that our tool is more light-weight and achieves better performance>
-% effectiveness: 
-% - performance: outperform baseline on various workloads
-% - code size: reduce binary size
-% - huge runtime overhead reduction, small dynamic re-compilation cost
-% generalizability: two arch (x86, ARM)
-
-% comment from yusheng: 
-% 内核 很慢 ，因为 security issue 很多，修改很复杂
+% message<evaluation>
+% performance: outperform baseline on various workloads
+% code size: reduce binary size
+% safety
 
 %%%%%%%%%%%%Outline%%%%%%%%%%%%%%%%%%
 
 \begin{abstract}
 
-Linux increasingly uses eBPF programs to run networking, tracing, and security logic on hot kernel paths.
-Each eBPF program is verified and JIT-compiled only once, during loading, so a loaded program cannot later be revised with runtime information.
-That limitation matters because many useful transformations become profitable or necessary only after observing a running workload.
-A natural response is to move richer recompilation logic into the kernel, but that approach would enlarge trusted kernel code and would tie fast-changing policy to safety-critical implementation.
-We present \tool, a system that separates recompilation policy from kernel mechanism for loaded eBPF programs.
-A userspace daemon selects rewrites, the existing verifier checks safety, the JIT emits machine code, and a small kernel mechanism installs the new version only after verification and JIT compilation succeed.
-This separation supports specialization and hardening after loading without changing existing loaders or attachment points.
-Experiments with microbenchmarks and real applications show smaller native code, higher end-to-end performance, and low online overhead.
-Safety case studies show that invalid rewrites are rejected and that failed recompilation leaves the original program running.
+Kernel extensions such as eBPF are widely used in performance and safety-critical paths. In the standard deployment path, programs are compiled to ordinary eBPF bytecode, verified in the kernel, and JIT-compiled to native code before execution. The same ordinary eBPF bytecode therefore serves both as the verifier's proof form and as the JIT's input to native code generation. 
+%
+This bytecode form is good for verifier reasoning, but it erases optimization-relevant semantics before a program reaches the kernel. To preserve those semantics without complicating the in-kernel JIT, we need to separate the bytecode used for optimization from the bytecode used for verification. We propose \tool, a dynamic recompilation framework that realizes this separation. 
+%
+\tool introduces kinsn, an extensible optimization-facing ISA whose instructions canonically expand to ordinary eBPF for kernel verification and lower directly to efficient native code. Optimization runs in userspace over kinsn, while the kernel reuses the existing verifier, re-JITs accepted rewrites, and installs them in place. 
+%
+Our evaluation shows that \tool improves performance and reduces code size across diverse workloads with low recompilation overhead. We further demonstrate its effectiveness across architectures and its ability to preserve safety through fail-safe execution and security-oriented case studies.
 
 \end{abstract}

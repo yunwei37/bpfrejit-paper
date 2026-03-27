@@ -1,0 +1,85 @@
+%%%%%%%%%%%%Outline%%%%%%%%%%%%%%%%%%
+
+%%%
+% message<introduction to this section>
+% opening sentence
+% ref to each subsection
+
+%%% subsection 3.1 <Representation of Kinsn>
+
+%%%
+% message<kinsn is a dedicated instruction form in eBPF bytecode>
+% first-class instruction site in the program
+% explicit optimization intent retained in bytecode
+% encoded as a sidecar plus a kinsn call
+% ordinary eBPF only appears as instantiated form for checking or fallback
+
+%%%
+% message<kinsn representation makes optimization intent explicit in bytecode>
+% two components:
+%  - target / instruction family
+%  - sidecar / operand-binding payload
+% sidecar carries regs, immediates, mode bits
+% concrete running example: select64
+% why target + sidecar better than later JIT pattern recovery
+
+%%% subsection<Kinsn Semantics in Verification and Execution>
+
+%%%
+% message<each kinsn has one canonical semantics shared by verifier and JIT>
+% module descriptor defines the canonical instantiated ordinary-BPF sequence
+% the same descriptor may also provide architecture-specific native emission
+% one instruction contract shared across verification and execution
+
+%%%
+% message<the verifier checks kinsn by temporarily lowering it to ordinary eBPF>
+% replace each kinsn site with its instantiated proof sequence
+% run the standard verifier on the lowered program
+% restore the original kinsn encoding after verification
+% ordinary eBPF serves as the proof form
+
+%%%
+% message<the JIT uses the original kinsn representation for direct native lowering>
+% keep the original kinsn site until code generation
+% dispatch on target and payload to emit native code
+% avoid recovering lost intent from flattened ordinary BPF
+% rewrite to the same instantiated ordinary-BPF sequence when native emit is unavailable
+% native lowering must preserve the canonical kinsn semantics
+
+%%%%%%%%%%%%Outline%%%%%%%%%%%%%%%%%%
+
+
+\section{Kinsn: Extending eBPF Bytecode}
+\label{sec:kinsn}
+
+This section introduces \emph{kinsn}, the bytecode abstraction that bridges that gap. We first describe how a kinsn site is represented in extended eBPF bytecode (Section~\ref{subsec:kinsn-repr}). We then explain how the same kinsn site is interpreted by verification and execution (Section~\ref{subsec:kinsn-semantics}). Section~\ref{sec:rejit} then shows how \tool constructs and uses these kinsn sites in its rewrite pipeline.
+
+
+\input{tables/sec-4-kinsn-table}
+
+
+\subsection{Representation of Kinsn}
+\label{subsec:kinsn-repr}
+
+Kinsn is a dedicated instruction form in eBPF bytecode. A program may therefore contain explicit kinsn sites, rather than encoding every optimization opportunity as an ordinary-BPF instruction sequence. This design keeps optimization intent in the bytecode itself, where later compilation stages can still observe and exploit it. Concretely, each site is encoded as a sidecar plus a kinsn call. Ordinary eBPF appears only as an instantiated form: it is used when the kernel needs a verifier-visible proof sequence and when a kinsn site must fall back to the generic path.
+
+Each kinsn site is represented by two parts: a \emph{target} and a \emph{sidecar} payload. The target identifies the instruction family, such as \texttt{rotate64}, \texttt{select64}, \texttt{extract64}, or an endian-aware load. The sidecar binds that abstract operation to a concrete program point by encoding the relevant registers, immediate fields, and mode bits. Figure~\ref{fig:select64-kinsn} uses \texttt{select64} as a running example. In ordinary eBPF, the operation appears as a small branch diamond. In kinsn form, the same operation appears as one instruction site whose target names the operation and whose sidecar carries the destination register, the condition input, and the candidate values. This split is important because it preserves the semantic structure that later lowering wants to realize directly, instead of forcing the JIT to recover that structure from already flattened ordinary-BPF code.
+
+% [] \note{hao: We have a mismatch here. The text says sidecar, but the figure uses 'binding'.}
+\input{figures/sec-4-kinsn}
+
+% [] \note{hao: instead of a new subsection, does it make sense to explain kinsn from: (1) how compilers can use it, and what is the benefit? (2) the verifier's behaviour, (3) the JIT's behaviour. And finally, safety guarantee. }
+\subsection{Kinsn Semantics in Verification and Execution}
+\label{subsec:kinsn-semantics}
+
+Each kinsn has one canonical semantics shared by the verifier and the JIT. A module-side descriptor defines how the kinsn is instantiated into an equivalent ordinary-BPF sequence, and it may also provide architecture-specific native emission routines for direct lowering. The instantiated ordinary-BPF sequence is the canonical, verifier-visible meaning of the kinsn. Native lowering does not define a different meaning; it is another realization of the same instruction contract.
+
+\input{tables/sec-4-kinsn-table}
+
+% [] \note{hao: why proof form? No proof here, just insns.}
+The verifier checks kinsn by temporarily lowering each site to its instantiated ordinary-BPF sequence. The kernel replaces the original kinsn site with this proof sequence, runs the standard eBPF verifier on the lowered program, and then restores the original kinsn encoding after verification succeeds. In this design, ordinary eBPF serves as the proof form for kinsn. The verifier does not need to reason about target-specific machine code, and kinsn does not require a separate safety checker.
+
+Execution follows a different path while preserving the same semantics. The original kinsn representation is kept until code generation, and the JIT backend dispatches on the target and sidecar payload to emit an architecture-specific native sequence directly from that representation. For example, the \texttt{select64} site in Figure~\ref{fig:select64-kinsn} can lower to a conditional-move sequence on x86 rather than re-materializing the branchy ordinary-BPF proof form. When direct native emission is unavailable for a site, the kernel rewrites that site to the same instantiated ordinary-BPF sequence used by the verifier and continues with the generic path. Thus, verification and execution follow different lowering paths, but both remain anchored to the same canonical kinsn semantics.
+
+%[] \note{hao: here is a nice place to argue why we preserve the verifier's safety guarantee down to the native's execution. }
+% TODO: \noindent\textbf{Kinsn Safety.} Define the equivalence between kinsn and native, assume the correctness of one-to-one mapping (the existing JIT), then by transitivity, the native is safe as the bytecode.

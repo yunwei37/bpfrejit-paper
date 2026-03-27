@@ -1,0 +1,79 @@
+\begin{figure*}[t]
+\centering
+\setlength{\fboxsep}{3pt}
+
+\newlength{\arrowwd}\setlength{\arrowwd}{0.025\textwidth}
+\newlength{\boxht} \setlength{\boxht}{5.5\baselineskip}% 按需调整
+
+\begin{tabular}{@{}c@{\hspace{0.008\textwidth}}
+                   c@{\hspace{0.008\textwidth}}
+                   c@{\hspace{0.008\textwidth}}
+                   c@{\hspace{0.008\textwidth}}
+                   c@{\hspace{0.008\textwidth}}
+                   c@{\hspace{0.008\textwidth}}
+                   c@{}}
+\textbf{bpf.c} &&
+\textbf{ordinary eBPF} &&
+\textbf{current x86} &&
+\textbf{better x86} \\[4pt]
+
+%--- 列1：C 源码 ---
+\fbox{%
+  \begin{minipage}[t][{\boxht}]{0.225\textwidth}
+    \ttfamily\scriptsize
+    v3 = micro\_rotl64(v3, 16U);\\[2pt]
+    static \_\_always\_inline u64\\
+    micro\_rotl64(u64 value, u32 shift)\\
+    \{\\
+    \quad shift \&= 63U;\\
+    \quad if (shift == 0) return value;\\
+    \quad return (value $<<$ shift) |\\
+    \qquad\qquad (value $>>$ (64U - shift));\\
+    \}
+  \end{minipage}}
+
+&\makebox[\arrowwd][c]{$\Rightarrow$}&
+
+%--- 列2：ordinary eBPF ---
+\fbox{%
+  \begin{minipage}[t][{\boxht}]{0.195\textwidth}
+    \ttfamily\scriptsize
+    r\_tmp = r\_x\\
+    r\_tmp $>$$>$= 48\\
+    r\_dst = r\_x\\
+    r\_dst $<$$<$= 16\\
+    r\_dst |= r\_tmp
+  \end{minipage}}
+
+&\makebox[\arrowwd][c]{$\Rightarrow$}&
+
+%--- 列3：current x86 ---
+\fbox{%
+  \begin{minipage}[t][{\boxht}]{0.195\textwidth}
+    \ttfamily\scriptsize
+    mov rcx, rdi\\
+    shr rcx, 48\\
+    mov rax, rdi\\
+    shl rax, 16\\
+    or\phantom{xx} rax, rcx
+  \end{minipage}}
+
+&\makebox[\arrowwd][c]{$\Rightarrow$}&
+
+%--- 列4：better x86 ---
+\fbox{%
+  \begin{minipage}[t][{\boxht}]{0.135\textwidth}
+    \ttfamily\scriptsize
+    mov rax, rdi\\
+    rol rax, 16
+  \end{minipage}}
+
+\end{tabular}
+
+\caption{A 64-bit rotate loses semantic structure as it moves through the
+current pipeline. The source-level rotate idiom is flattened into ordinary
+eBPF shifts and an \texttt{or}; the current x86 JIT therefore emits a longer
+shift/or sequence instead of the more direct \texttt{rol} idiom that the
+target ISA already supports.}
+\label{fig:rotate-gap}
+\end{figure*}

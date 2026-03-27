@@ -51,3 +51,5 @@ These systems make extension admission or execution safer and more expressive; \
 Prior direct BPF optimization work instead improves object-level bytecode before deployment. Search-based systems such as K2 and EPSO optimize BPF by discovering better instruction sequences or reusable rewrite rules~\cite{k2,epso}. Merlin attacks the same problem through a richer compiler pipeline, lifting BPF into LLVM IR to enable broader static optimization~\cite{merlin}. 
 %
 Despite these technical differences, all these systems share the same optimization point: they assume build- or load-path control and access to the original \texttt{.bpf.o}, so they cannot transparently revisit programs that were already loaded by third-party tools or exploit runtime behavior that emerges only after deployment~\cite{k2,merlin,epso}. \tool is complementary because it optimizes at a different point in the lifecycle: post-load, on live programs, with runtime guidance and backend-aware kernel instruction support.
+
+\note{incorporate original LLVM / JVM / Wasm section in background}

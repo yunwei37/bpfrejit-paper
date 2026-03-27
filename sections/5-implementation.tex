@@ -32,8 +32,10 @@
 
 %%%%%%%%%%%%Outline%%%%%%%%%%%%%%%%%%
 
-\section{Implementation}
+\section{Implementation \note{TO-DO}}
 \label{sec:impl}
+
+\note{Yusheng: I think it's better to desccribe it from 2 parts(2 subsections) in this impl, subsection one is the compiler improvement(algorithm we realize), have a big table about it like in the plan; subsection 2 is the runtime components like daemon(include the profiler and rewriter), syscall interface, verifier and JIT changes. each runtime conponent can be one paragraph.}
 
 Section~\ref{sec:impl} explains how \tool realizes the design in Linux. Section~\ref{sec:impl-rejit} describes how the kernel preserves the original bytecode of a loaded program and rebuilds rewritten programs through the normal verification and JIT pipeline. Section~\ref{sec:impl-kinsn} explains how \emph{kinsn} is represented and how the verifier and the JIT share one implementation contract for each instruction family. Section~\ref{sec:impl-publish} presents the replacement path, including safe publication of new code and refresh of attachment-specific state. Finally, Section~\ref{sec:impl-daemon} describes the daemon as a whole-program rewrite pipeline and shows how the same pipeline supports both controlled experiments and long-running deployment.
 

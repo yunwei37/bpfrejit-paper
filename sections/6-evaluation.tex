@@ -1,0 +1,177 @@
+%%%%%%%%%%%%Outline%%%%%%%%%%%%%%%%%%
+
+%%%
+% message<RQ1: efficiency of generated native code>
+% experiment 1.1: micro benchmark
+% experiment 1.2: transform-family ablation study
+% experiment 1.3: prove that native-code opportunities exist in real programs
+
+
+%%%
+% message<RQ2: application-level performance benefit>
+% experiment 1: Runnable production-program subset
+% experiment 2: End-to-end workload evaluation
+
+%%%
+% message<RQ3: overhead of online re-compilation>
+% experiment 1: Re-compilation pipeline breakdown
+% experiment 2: Steady-state daemon overhead
+% experiment 3：Scaling and disruption under load
+% experiment 4: Transparency
+
+%%%
+% message<RQ4: safety and correctness>
+% experiment 1: Safety preservation
+%  - how many programs are accepted / rejected by the verifier
+%  - 
+% experiment 2: Fail-safe rejection
+% experiment 3: Semantic correctness
+
+%%%
+% message<RQ5: extensibility>
+% experiment 1: Engineering cost of adding a new capability
+% case study 1: New capability case study
+
+% note
+% benchmark setup, 完整的，see merlin 和 k2
+% spec: detail 的 设计，具体做什么设计，要出什么图，代码需要什么修改 来 匹配 eval 
+% 详细 描述 图是什么样子的，形式化的 定义
+% 期待 的 图是什么样子
+
+% note 
+% safety boundary != optimization boundary
+
+
+%%%%%%%%%%%%Outline%%%%%%%%%%%%%%%%%%
+
+\section{Evaluation \note{TO-DO, data not real}}
+\label{sec:evaluation}
+
+In this section, we aim to answer the following research questions:
+\begin{itemize}
+    \item \textbf{RQ1}: How effectively does \tool improve the efficiency of generated native code?
+    \item \textbf{RQ2}: How much application-level performance benefit does \tool deliver in realistic deployments?
+    \item \textbf{RQ3}: What is the overhead of online re-compilation in \tool?
+    \item \textbf{RQ4}: Does \tool preserve the existing eBPF safety model and semantic correctness of its rewrites?
+    \item \textbf{RQ5}: How easily can \tool be extended with new optimization capabilities?
+\end{itemize}
+
+We evaluate \tool along five complementary dimensions. 
+%
+RQ1 examines whether \tool improves the efficiency of the native code ultimately emitted by the kernel JIT, including both code compactness and low-level execution efficiency.
+%
+RQ2 asks whether these low-level code improvements translate into measurable application-level benefits in realistic deployments.
+%
+RQ3 measures the online cost of using \tool in practice, including the overheads of profiling, re-compilation, and program replacement on live systems.
+%
+RQ4 evaluates whether \tool preserves the existing eBPF safety model and whether its rewrites remain semantically consistent with the original programs.
+%
+RQ5 evaluates whether \tool is truly extensible by measuring the engineering effort needed to introduce new optimization capabilities.
+
+
+\subsection{Evaluation Setup}
+\label{subsec:evaluation-setup}
+
+\input{figures-next/text-eval-setup}
+
+\subsection{RQ1: Efficiency of Generated Native Code}
+\label{subsec:rq1}
+
+We first ask whether \tool improves the native code ultimately emitted by the kernel JIT, and whether the opportunities it targets appear broadly enough to matter beyond hand-written kernels.
+
+\noindent\textbf{Supported-family microbenchmarks.}
+To isolate code-generation effects, we evaluate the subset of microbenchmarks that exercise optimization families currently supported by \tool and compare the stock kernel JIT with live reJIT through \tool. Table~\ref{tab:rq1-micro-overview} reports the two native-code outcomes directly: runtime under the stock kernel JIT versus runtime after reJIT, together with the corresponding emitted code size. In the current synthetic placeholder dataset, \tool achieves a geometric-mean 1.13$\times$ speedup and a median 10.5\% code-size reduction. The largest wins come from wide-memory simplification and rotate-oriented rewriting, whereas conditional-select remains the most workload-sensitive family. The key point of this experiment is not only that the wins are positive, but that \tool improves several supported optimization families without changing the ordinary execution path after recompilation.
+
+\input{figures-next/tab-rq1-micro-overview}
+
+\noindent\textbf{Family-level contribution.}
+The overall microbenchmark result would be less compelling if it were driven by one narrow pattern, so we regroup the same runs by transform family. Table~\ref{tab:rq1-family-summary} shows that the gains are distributed across several families. Wide-memory rewrites contribute the largest code shrink, rotate contributes the most stable arithmetic wins, and conditional-select exhibits mixed profitability despite having a positive median result. This breakdown supports a core design argument of the paper: better eBPF code generation is not one missing peephole in the kernel JIT, but a collection of recurring optimization families, some of which are inherently policy-sensitive.
+
+\input{figures-next/tab-rq1-family-summary}
+
+\noindent\textbf{Coverage in real programs.}
+Microbenchmarks establish headroom, but they do not tell us whether the same opportunities appear in realistic programs. We therefore scan the real-program corpus, count eligible rewrite sites by subsystem and transform family, and then measure the code-size deltas of the eligible subset. Figure~\ref{fig:rq1-corpus-coverage} shows that these opportunities occur across networking, tracing, and security workloads rather than only in synthetic kernels. In the current placeholder dataset, 78 of 152 programs contain at least one eligible site, and the eligible subset still shows a clearly positive median JIT-image reduction. Thus, the code-generation opportunities targeted by \tool are not artifacts of a benchmark suite; they are also present in realistic deployed programs.
+
+\input{figures-next/fig-rq1-corpus-coverage}
+
+Together, these results support the RQ1 claim: \tool improves the quality of native code emitted by the kernel JIT, and the opportunities it exploits are common enough to matter in practice.
+
+\subsection{RQ2: Application-Level Performance Benefit in Realistic Deployments}
+\label{subsec:rq2}
+
+RQ1 shows that \tool improves native code. We next ask whether these lower-level gains survive the transition to full programs and end-to-end deployments.
+
+\noindent\textbf{Runnable real-program subset.}
+We begin with the runnable subset of the real-program corpus: programs that have reproducible triggers, comparable stock/reJIT measurements, and at least one eligible rewrite site. Figure~\ref{fig:rq2-corpus-runtime} shows the distribution of per-program speedups on that subset. The median shift remains clearly positive, but smaller than in the microbenchmarks, which is the expected outcome once helper cost, map access, and surrounding program logic are included. In the current placeholder dataset, the median speedup is 1.06$\times$. This experiment therefore plays an important bridging role: it shows that the benefit of \tool survives the move from isolated kernels to full real programs, even though the effect size naturally compresses.
+
+\input{figures-next/fig-rq2-corpus-runtime}
+
+\noindent\textbf{End-to-end deployments.}
+We then evaluate two representative deployment settings: Tracee for observability and security, and Katran for packet processing on the fast path. Table~\ref{tab:rq2-e2e} summarizes the compact throughput/BPF/CPU view of the current placeholder results. In the Tracee workloads, lower BPF execution time translates into moderate throughput gains while leaving event rates effectively unchanged; in the current placeholder dataset, event-rate deltas stay within $\pm 0.2\%$. In the Katran workloads, reduced BPF time per packet yields smaller but still repeatable improvements in throughput and CPU utilization, while tail latency also improves modestly; the current placeholder P99 reduction ranges from 1.2\% to 2.1\%. The important lesson is not that every deployment sees the same magnitude of gain, but that lower-level code-generation improvements continue to produce measurable benefit at the application level.
+
+\input{figures-next/tab-rq2-e2e}
+
+Overall, the RQ2 experiments support the claim that \tool's code-generation improvements are visible above the native-code level and can produce measurable benefit in realistic deployments.
+
+\subsection{RQ3: Overhead of Online Re-Compilation}
+\label{subsec:rq3}
+
+The previous subsections show that reJIT can help. We now ask whether its cost is low enough for online use.
+
+\noindent\textbf{Request latency and pipeline breakdown.}
+Our first overhead experiment compares two ways of invoking reJIT: launching a one-shot daemon process per request versus sending requests to a long-running daemon server. In the current placeholder dataset, one-shot requests take 23.4\,ms for a small target and 31.8\,ms for a large target, while the persistent server reduces those medians to 7.2\,ms and 10.9\,ms. Figure~\ref{fig:rq3-latency-breakdown} then breaks the amortized reJIT latency into its main stages for small and large targets separately. In both cases, verification and JIT account for most of the end-to-end cost, whereas userspace analysis and rewriting remain a smaller fraction. This is the overhead profile we want: once the daemon is resident, the dominant cost of reJIT is still the kernel's existing enforcement path, not a heavyweight userspace optimizer loop.
+
+\input{figures-next/fig-rq3-latency-breakdown}
+
+\noindent\textbf{Steady-state daemon cost.}
+Low request latency alone is not enough; the daemon must also be cheap to leave enabled during normal operation. We therefore compare four daemon states on stable Tracee and Katran workloads: disabled, watch only, profile only, and the full adaptive path. Table~\ref{tab:rq3-daemon-overhead} shows that watch-only and profile-only modes are close to free, while even the full adaptive mode remains lightweight relative to the performance it can recover. In the placeholder dataset, the adaptive mode stays near 1\% daemon CPU and 31\,MB RSS. This result supports the decision to keep policy in userspace: the framework imposes little steady-state tax unless we intentionally enable more expensive adaptive behavior.
+
+\input{figures-next/tab-rq3-daemon-overhead}
+
+\noindent\textbf{Transient disruption during live replacement.}
+Finally, we look at whether a single live reJIT event visibly disturbs an ongoing workload. This experiment matters because it tests the operational consequence of in-place replacement: even when recompilation is successful, it must not tear down the running deployment or induce a prolonged disruption.
+
+\input{figures-next/text-rq3-disruption}
+
+Taken together, the RQ3 experiments show that the online cost of \tool is low enough to make post-load optimization practical in a continuous deployment setting.
+
+\subsection{RQ4: Safety Preservation and Semantic Correctness}
+\label{subsec:rq4}
+
+The paper's central design claim is that safety and optimization policy are separated: the kernel verifier remains the safety boundary, while userspace is responsible for rewrite correctness. RQ4 evaluates whether that separation holds up in practice.
+
+\noindent\textbf{Fail-safe rejection.}
+We first test the fail-safe property directly. The targeted adversarial suite submits rewrites that attempt to violate memory safety, control-flow integrity, type constraints, privilege rules, and metadata invariants; the fuzzing experiment then broadens that stress with large numbers of randomized bytecode mutations.
+
+\input{figures-next/text-rq4-failsafe}
+
+These are exactly the failure semantics that \tool is designed to provide: a buggy or compromised optimizer can fail closed, but it does not bypass the verifier.
+
+\noindent\textbf{Semantic consistency.}
+Fail-safe rejection alone does not show that successful rewrites preserve behavior. We therefore compare original and rewritten programs on identical inputs and initial state, checking externally visible results such as return values, map updates, and emitted events. Table~\ref{tab:rq4-semantic} summarizes the coverage of this differential suite across rewrite families and representative real programs. In the current placeholder dataset, we observe no mismatches across 53 programs and 94{,}000 test inputs. The intended interpretation is careful but important: the verifier guarantees safety, while semantic preservation is supported empirically through testing.
+
+\input{figures-next/tab-rq4-semantic}
+
+Overall, RQ4 supports the paper's core separation of responsibilities: the kernel continues to decide safety, and userspace rewrite correctness is validated through systematic testing plus fail-safe rejection.
+
+\subsection{RQ5: Extensibility of the Optimization Framework}
+\label{subsec:rq5}
+
+The final question is whether \tool is truly a framework or merely a fixed bundle of optimizations.
+
+\noindent\textbf{Adding one new capability.}
+To test extensibility, we add one new optimization family and measure both the implementation effort and the resulting benefit. Table~\ref{tab:rq5-cost} reports only the implementation footprint. In the current placeholder dataset, the work is concentrated in the daemon pass, the optional x86/ARM64 lowering modules, and a small amount of validation and benchmark plumbing, while the core kernel verifier and syscall path remain unchanged. This is the extensibility pattern the design is aiming for: most innovation should happen outside the trusted kernel core.
+
+\input{figures-next/tab-rq5-cost}
+
+\noindent\textbf{Value of the new capability.}
+Extensibility would be less meaningful if newly added capabilities were easy to implement but hard to realize in practice. Figure~\ref{fig:rq5-new-capability} therefore evaluates the same new family on one dedicated microbenchmark and several real programs that expose the corresponding opportunity. The placeholder results show a clear win on the dedicated kernel together with smaller but still positive gains on real programs. This is the right framework-level story: new capabilities can be added with localized effort and then exercised through the same live reJIT workflow as the original ones.
+
+\input{figures-next/fig-rq5-new-capability}
+
+\noindent\textbf{Graceful degradation.}
+Finally, we evaluate the lifecycle behavior of optional capability modules across the key deployment transitions that matter in practice.
+
+\input{figures-next/text-rq5-lifecycle}
+
+Thus, the RQ5 experiments support the final claim of the paper: \tool remains extensible in the intended sense, allowing new optimization families to be added and deployed without turning the verifier or JIT into a monolithic in-kernel optimizer.

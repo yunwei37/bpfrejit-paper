@@ -3,3 +3,23 @@
 \usepackage{xcolor}
 \usepackage{caption}
 \usepackage{tikz}
+\usepackage{listings}
+
+\lstdefinestyle{motivationcode}{
+    basicstyle=\ttfamily\footnotesize,
+    breaklines=true,
+    frame=single,
+    % --- 行号 ---
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    numbersep=8pt,
+    % --- 语法高亮 ---
+    keywordstyle=\bfseries\color{magenta},
+    commentstyle=\itshape\color{purple!60!black},
+    identifierstyle=\color{blue!70!black},
+    stringstyle=\color{orange!80!black},
+    % --- 其他 ---
+    backgroundcolor=\color{white},
+    xleftmargin=20pt,   % 加宽，为行号留空间
+    framexleftmargin=15pt,
+}

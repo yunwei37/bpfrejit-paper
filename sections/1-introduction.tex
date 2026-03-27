@@ -1,87 +1,126 @@
 %%%%%%%%%%%%Outline%%%%%%%%%%%%%%%%%%
 
 %%%
-% message<Modern kernels increasingly execute deployment-specific programs on hot paths, so the real systems problem is no longer whether the kernel can run custom logic, but how that logic can be specialized and hardened after deployment.>
-% deployment-specific networking, observability, security, and scheduling logic now lives on kernel fast paths
-% once such logic is deployed, compilation becomes a lifecycle problem rather than a one-shot load-time step
-% eBPF is the dominant concrete instance of this broader trend, not the whole story by itself
+% message<kernel extension is performance critical>
+% eBPF is increasingly used for networking, observability, security, and scheduling
+% these programs are performance-critical
+% quality of native code affects end-to-end efficiency
 
 %%%
-% message<The current compilation pipeline leaves opportunities at three different stages, and the common missing piece is a post-deployment compilation boundary.>
-% LLVM to BPF misses deployment-specific and runtime-specific information
-% BPF to native JIT lacks rich target-specific instruction selection and whole-program rewrite structure
-% after deployment, the system cannot use profile feedback, stable runtime values, or new hardening opportunities to revisit already-loaded programs
+% message<observation: current kernel extension compilation is under optimized>
+% admitted through the verifier and translated by an in-kernel JIT
+% due to safety requirements, kernel JIT must be simple
+% result:
+% - optimization is conservative and largely one-shot at load time
+% - load-time-only compilation cannot exploit post-deployment opportunities
 
 %%%
-% message<Neither a richer in-kernel optimizer nor load-time-only external optimization is the right answer.>
-% pushing more policy into the verifier/JIT path puts fast-evolving complexity on a privileged and security-sensitive kernel boundary
-% prior external optimizers improve initial code generation but cannot revisit live programs or exploit runtime information after deployment
-% the missing abstraction is a principled split among kernel mechanism, userspace policy, and verifier-backed safety
+% message<problem: structural code-generation gap between ordinary BPF and hardware ISA>
+% ordinary BPF bytecode does not directly encode many hardware-efficient idioms
+% a simple kernel JIT cannot reliably reconstruct these idioms from generic BPF sequences
+% result: gap between verifier-visible bytecode and efficient native code
 
 %%%
-% message<This paper's thesis is that programmable kernels need a post-deployment compilation boundary, not an in-kernel optimizing compiler.>
-% principle 1: preserve the existing verifier safety boundary by re-verifying every rewritten program before replacement
-% principle 2: place compilation policy in userspace so it can use richer analysis, runtime feedback, and rapid iteration
-% principle 3: expose a minimal extensible low-level substrate for target-specific realization without growing a monolithic kernel optimizer
+% message<existing solutions cannot fully solve this gap>
+% impl more optimization in kernel JIT: break safety
+% prior external eBPF optimizers improve code before load or at load time
+%  - still miss runtime-guided specialization after deployment
+%  - do not provide transparency, verifier-backed safety, and extensible hardware-aware code generation
 
 %%%
-% message<\tool realizes this thesis by deliberately splitting responsibility so that each component stays narrow.>
-% userspace daemon owns policy: profiling, rewrite construction, and deciding when specialization or hardening is worth attempting
-% kernel recompilation component owns mechanism: recover original bytecode, route candidates through re-verification and re-JIT, and install them safely in place
-% verifier owns safety and continues to reason about verifier-visible program semantics rather than trusting optimizer policy or native patches
-% JIT and kinsn own low-level realization and map legal instruction variants to efficient native code on each platform
+% message<key insight: in need of new bytecode insns>
+% introduce kinsn, an extensible bytecode layer aligned with hardware idioms
+% each kinsn also has architecture-specific native lowering
+% each kinsn can be replaced with equivalent impl in original BPF to reuse safety
+% this separates the safety interface from the performance interface without weakening the BPF safety model
 
 %%%
-% message<This split is valuable because it improves generated code and adaptability without concentrating complexity inside the kernel.>
-% the verifier does not learn profitability policy
-% the JIT does not become a full runtime optimizer
-% the kernel component does not grow into a general-purpose compiler
-% userspace can evolve quickly without becoming part of the kernel's trusted safety boundary
+% message<\tool uses kinsn to create a post-deployment compilation boundary for live eBPF programs>
+% a userspace daemon owns policy:
+% - profiling
+% - rewrite construction
+% - profitability decisions
+% - specialization / hardening decisions
+% a small kernel component owns mechanism:
+% - recover live bytecode
+% - re-verify candidate rewrites
+% - re-JIT
+% - replace safely in place
+% the verifier continues to check ordinary-BPF-visible semantics
+% the JIT remains small because it realizes kinsn rather than becoming a general optimizing compiler
 
 %%%
-% message<\tool turns eBPF from a one-shot verified load path into a post-deployment framework for specialization, hardening, and online adaptation.>
-% it can revisit already-loaded programs through existing deployment paths
-% it supports runtime-guided specialization as well as safety-oriented transformations
-% replacement is in place, so applications, loaders, attachment paths, and steady-state execution remain unchanged
+% message<This design enables online adaptation while preserving deployment transparency>
+% \tool can revisit already-loaded programs using runtime feedback and stable runtime values
+% replacement is in place, so applications, loaders, and attachment paths do not change
+% invalid rewrites fail closed through the existing verification path
+% new optimization or hardening capabilities can be added without expanding the trusted kernel boundary
 
 %%%
-% message<Evaluation should promise a system evidence chain rather than only micro-optimization wins.>
-% measure generated-code quality on microbenchmarks and real-program corpora
-% measure end-to-end application benefit and online recompilation overhead
-% measure safety preservation, fail-safe rejection, semantic correctness, and at least one safety/hardening case study
-% measure extensibility of adding new capabilities
+% message<evaluation>
+% measure generated-code quality on microbenchmarks and real eBPF corpora
+% measure end-to-end application benefit in representative deployments
+% measure online recompilation overhead, disruption, and replacement latency
+% measure safety preservation, semantic correctness, and fail-safe rejection
+% measure extensibility by adding new kinsn / rewrite capabilities
 
 %%%
-% message<Our contributions are a systems abstraction, a concrete realization, and a broad evidence set.>
-% contribution 1: identify post-deployment kernel compilation as a systems problem and derive design principles
-% contribution 2: design and implement \tool with responsibility split across userspace policy, kernel mechanism, verifier, and JIT/kinsn
-% contribution 3: evaluate performance, code quality, online overhead, safety/correctness, and extensibility
+% message<contributions>
+% identify the structural code-generation gap in eBPF and motivate a post-deployment compilation boundary
+% design and implement \tool around the kinsn / BPF semantics / native codegen tuple
+% show that live recompilation improves code quality and application performance while preserving safety and keeping kernel complexity small
 
 %%%%%%%%%%%%Outline%%%%%%%%%%%%%%%%%%
+
+% [] \note{hao: 独特挑战，JIT：优化策略大大增加复杂性，verifier：拓展指令语义要求复杂的分析算法，compiler：受限于精简指令&极少reg；kinsn把复杂性分散到不同组建，follow "mechanism"和"strategy"分离的原则，**且**基于verifier保证strategy的安全性；有了kinsn后，内核（JIT）仅提供机制（有什么指令），verifier看到的是原始序列，无分析修改，compiler实现策略，更多指令选择，且因为kinsn的设计，寄存器压力也变小。}
+% [] \note{hao: plus, 我们已经证明序列和本地指令等价，verifier see: prog= inst(kinsn)+insn, proves safe_of(inst(kinsn) + insn); we prove `inst(kinsn) = native_kinsn` and jit provides `original insn = native`, so native_kinsn + native 和 inst(kinsn) + insn语义等价，所以verifier保证的安全性可以传递到native}
+% [] \note{hao: add graph, see group chat}
 
 \section{Introduction}
 \label{sec:introduction}
 
-Modern kernels increasingly execute deployment-specific programs on hot paths. These programs implement networking, observability, security, and scheduling policies that differ across machines and continue to evolve after deployment. Once such logic becomes part of the kernel fast path, compilation is no longer only a load-time concern; the system also needs a way to revisit, specialize, and harden deployed programs over time. Linux eBPF is the most prominent concrete instance of this trend. Production systems already rely on eBPF for programmable networking~\cite{cilium,katran}, observability~\cite{tracee}, security enforcement~\cite{krsi}, and scheduling~\cite{sched_ext}. The quality of compiled eBPF code therefore directly affects both system efficiency and the practicality of deployment-specific kernel services.
+Kernel extensions are performance-critical in modern systems. Linux uses eBPF as a kernel extension mechanism for networking~\cite{cilium,katran}, observability~\cite{tracee}, security enforcement~\cite{krsi}, and scheduling~\cite{sched_ext}. Many of these eBPF programs execute on hot paths, and their native code quality directly affects end-to-end efficiency.
 
-Today, however, the compilation boundary is in the wrong place. Opportunities are distributed across three stages of the pipeline. Before load time, LLVM-to-BPF compilation cannot see deployment-specific behavior or runtime-stable values. During BPF-to-native translation, the in-kernel JIT has only a narrow way to express target-specific instruction selection and whole-program rewrites. After deployment, the system still lacks a mechanism to use profile feedback, stable runtime values, or newly discovered hardening opportunities to revisit already-loaded programs. The problem is therefore not just that the kernel misses a few optimizations. The deeper problem is that already-deployed kernel programs have no post-deployment compilation boundary.
+% [] \note{hao: We should add a footnote for `JIT`. This is really AOT, not JIT; compilation happens at load time, not during the execution; this may confuse compiler people (Zhendong was confused why the eBPF community calls it JIT).}
+% [] \note{hao: We should probably mention: the current JIT is basically one-to-one BPF insn to native insn mapping, few optimizations (if not zero) to keep everything simple; probably mention the loc for aarch64 JIT: arch/arm64/net/bpf_jit_comp.c 3202 lines. }
+% [] \note{We can also mention: in comparison, the modern compiler backend adopts various opts. For aarch64, there is even a machine ir (mir) before emitting the native code to apply various heuristics for backend-specific opt, while in eBPF, it's just one-to-one mapping.}
+% [] \note{We can also mention the number to show the gap between the eBPF jit and LLVM. For the same objects, show the performance/end-to-end/binary size gap. This gives a clear view of the improvement space.}
 
-One response is to make the in-kernel verifier and JIT substantially smarter. Another is to optimize only before or during the initial load, as prior external eBPF optimization systems do~\cite{k2,merlin,epso}. Neither is sufficient. Building a rich optimizing compiler into the kernel would place fast-evolving, workload-sensitive, and platform-specific policy on one of the kernel's most privileged and security-sensitive paths. That choice raises implementation complexity, review cost, and the consequence of mistakes. Conversely, load-time systems can improve initial code generation, but they cannot revisit live programs or exploit the runtime information that appears only after deployment. What is missing is not another fixed pass pipeline, but a principled split among kernel mechanism, userspace policy, and verifier-backed safety.
+% [] \note{The goal is just to make it clear, there is a huge gap for the current in-kernel JIT approach.}
+% [] \note{to answer: what is the problem we want to focus}
+However, current eBPF compilation leaves many optimization opportunities unused. Both eBPF verification~\cite{verifier} and JIT compilation~\cite{linux_bpf_jit} run on the kernel's safety-critical loading path, so the JIT must stay simple. As a result, eBPF optimization remains conservative and largely one-shot at load time. Moreover, a load-time-only compilation pipeline cannot exploit opportunities that appear after deployment, such as runtime profiles and stable runtime values.
 
-We argue that programmable kernels need a post-deployment compilation boundary, not an in-kernel optimizing compiler. Such a boundary should satisfy three principles. First, it should preserve the existing verifier safety boundary: every rewritten program must be accepted through the normal verification path before replacement. Second, it should place compilation policy in userspace, where rewrite selection can use richer analysis, runtime feedback, and rapid iteration. Third, it should expose a minimal extensible low-level substrate through which rewritten programs can request target-specific realizations that plain BPF does not directly encode.
+% [] \note{hao: This probably is a nice place to argue the unique challenges: (1) remain low complexity for JIT (kernel), (2) extending semantics for the verifier is nontrivial and error-prone, (3) compilers are still restricted by the insn/reg available and lack of runtime information.}
+% [] \note{to answer: why the problem is hard}
+\note{Yusheng: I think the first sentence is right, for the rest of them, the current version only focus on bytecode, we also need to from an arch view, say to keep the safety, People cannot do optimization pass in JIT(Which is typical JVM/Wasm did) after verification, also limit it's dynamic optimization oppotunity.}
+The root of the problem is that ordinary BPF serves safety well but serves efficiency poorly. Ordinary BPF bytecode gives the verifier a small, target-independent instruction set with explicit semantics. However, efficient native code often depends on hardware-specific idioms that ordinary BPF does not express directly. Closing this mismatch would require the JIT to reconstruct target-specific intent from generic BPF instruction sequences. A simple kernel JIT cannot do that reliably or extensibly. Consequently, the same bytecode interface that enables verifier-backed safety also creates a structural barrier to efficient code generation.
 
-We present \tool, a post-deployment compilation framework for live eBPF programs that realizes these principles by deliberately splitting responsibility. A privileged userspace daemon owns policy: it profiles live programs, constructs whole-program rewrites, and decides when specialization or hardening is worth attempting. A small kernel recompilation component owns mechanism: it recovers the original bytecode of a live program, routes candidate rewrites back through verification and JIT compilation, and installs a new native image in place only after success. The verifier owns safety: it continues to reason about verifier-visible program semantics rather than trusting optimizer policy or native patches. The JIT and the \emph{kinsn} layer own low-level realization: they define how legal instruction variants map to efficient native code on each platform.
+% [] \note{hao: The existing work can be categorized into two classes: improving the JIT (Jitterbug) (limited by the complexity requirement), add more ad-hoc opts in the compiler, e.g., K2 (limited by the bytecode design). }
+% [] \note{to answer: what is the sota}
 
-This split keeps each part narrow. The verifier does not learn profitability policy. The JIT does not become a full runtime optimizer. The kernel recompilation component does not grow into a general-purpose compiler. Meanwhile, userspace can evolve quickly without becoming part of the kernel's trusted safety boundary. The result is a system that can improve generated code and adapt to runtime behavior without concentrating complexity inside the kernel.
+Existing approaches do not fully resolve this mismatch. One option is to make the in-kernel JIT more aggressive, but that would push fast-evolving, workload-dependent optimization policy into the kernel boundary and expand kernel complexity. Another option is to optimize eBPF in userspace before load or at load time, as in prior systems~\cite{k2,kfuse,merlin,epso,epass,bcf}. These efforts improve parts of the pipeline, but they still miss runtime-guided specialization after deployment, and they do not simultaneously provide deployment transparency, verifier-backed safety, and an extensible substrate for hardware-aware code generation.
 
-Together, these pieces turn eBPF from a one-shot verified load path into a post-deployment framework for specialization, hardening, and online adaptation. \tool can revisit already-loaded programs through existing deployment paths, apply runtime-guided specialization and target-specific rewrites, and support safety-oriented transformations such as hardening and fail-safe rejection of invalid rewrites. Because replacement occurs in place, existing applications, loaders, and attachment paths remain unchanged, and steady-state execution still follows the ordinary JIT fast path.
+% [] \note{hao: Maybe consider this: Our key insight is, following the principle of separating mechanisms and strategies, to decouple/distribute/manage the complexity via a new bytecode-level abstraction that provides different views to the JIT, verifier, and the compiler, thereby achieving a highly flexible compilation framework while remaining a low complexity in kernel space.}
+% [] \note{hao: We can mention that the two realizations are proved to be equivalent in a proof assistant before adding it to the kernel. Plus, I am not sure 'realization' is a good term; how can we connect this with 'different views'. I don't have a good candidate. }
+% [] \note{hao: we can refer to the new figure here to show what is the view/complexity for each party. }
+% [] \note{to answer: what is our smart solution}
+\note{Yusheng: Currently, over half of our optimizations do not depend on Kinsn; therefore, it might be more logical to present BPFreJIT upfront. Although Kinsn introduces significant novelty related to instruction-level optimization, the core insight of our framework, BPFreJIT, is actually orthogonal. Specifically, BPFreJIT aims to transparently enable two distinct classes of optimizations—hardware-specific optimizations and dynamic runtime optimizations. Each of these optimization categories can be activated through various approaches, but achieving transparency, minimal kernel intrusiveness, and guaranteed safety fundamentally requires BPFreJIT.}
 
-We evaluate \tool along five dimensions. First, we measure generated-code quality on controlled microbenchmarks and real-program corpora. Second, we measure end-to-end application benefit in realistic deployments. Third, we measure the online overhead of recompiling and replacing live programs. Fourth, we evaluate whether \tool preserves the existing eBPF safety model and the semantic correctness of rewrites, including fail-safe rejection and safety-oriented case studies. Finally, we evaluate extensibility by examining how new capabilities are added without turning the verifier or JIT into a large optimizing subsystem. Overall, the results show that post-deployment specialization can improve performance and code quality while keeping kernel-side complexity bounded.
+Our key insight is that closing this gap requires a new bytecode-level abstraction. We introduce \emph{kinsn}, an extensible bytecode layer aligned with hardware idioms. Each kinsn has two realizations. First, it has an equivalent implementation in ordinary BPF that defines its verifier-visible semantics. Second, it has an architecture-specific native lowering that realizes the same semantics efficiently on a target ISA. In this way, kinsn gives the verifier the semantics it needs and gives the JIT the hardware-specific intent it needs, without weakening the BPF safety model.
+
+% [] \note{hao: do we need to mention that the user space daemon is privileged? It's priv on the Linux kernel's implementation, but from a design level, this seems unnecessary. }
+\note{Yusheng: so it would be better if we are not saying Based on kinsn...because half of it is not just kinsn}
+Based on kinsn, we propose \tool, a post-deployment compilation framework for live eBPF programs. \tool introduces a new compilation boundary after deployment and splits responsibility accordingly. A privileged userspace daemon owns compilation policy: it profiles live programs, constructs rewrites, decides when specialization or hardening is worthwhile, and selects among profitable alternatives. A small kernel component owns mechanism: it recovers live bytecode, re-verifies rewritten candidates, re-JITs them, and replaces the installed native image safely in place. The verifier remains the final safety gate, and the JIT remains small because it realizes kinsn rather than becoming a general-purpose optimizing compiler.
+
+This design enables online adaptation without changing the existing deployment model. \tool can revisit already-loaded programs with runtime feedback and stable runtime values. In-place replacement keeps applications, loaders, and attachment paths unchanged. The existing verification path rejects invalid rewrites before installation, so rewrites fail closed. New optimization and hardening capabilities can therefore evolve in userspace without expanding the trusted kernel boundary.
+
+% [] \note{hao: I assume we will mention the key results and the benchmark used when they are ready, right? It would be more convincing if we had: we evaluate kinsn on real-world workload from popular user space eBPF projects, e.g., Cilium; and the result shows that kinsn provides xx times end-to-end performance improvement, and xx execution time speed up (binary size reduction). }
+We evaluate \tool along five dimensions. We measure generated-code quality on microbenchmarks and real eBPF corpora. We measure end-to-end application benefit in representative deployments. We measure online recompilation overhead, disruption, and replacement latency. We measure safety preservation, semantic correctness, and fail-safe rejection. We also measure extensibility by adding new kinsn and rewrite capabilities.
 
 \noindent\textbf{Contributions.}
-In summary, we make three contributions:
+This paper makes three contributions:
 \begin{itemize}
-  \item We identify \emph{post-deployment kernel compilation} as a distinct systems problem and derive three design principles for it: kernel mechanism rather than kernel policy, verifier-backed safety rather than trusted rewrites, and an extensible low-level realization substrate rather than a monolithic in-kernel optimizer.
-  \item We design and implement \tool, a post-deployment compilation framework that splits responsibility across userspace policy, a minimal kernel recompilation mechanism, the existing verifier, and an extensible JIT/\emph{kinsn} layer, enabling safe in-place recompilation of live eBPF programs.
-  \item We evaluate \tool across microbenchmarks, real-program corpora, end-to-end deployments, online-overhead experiments, and safety/extensibility case studies, showing that it improves code quality and application performance while preserving the safety boundary and keeping kernel complexity small.
+    \item We identify a structural mismatch in eBPF's bytecode interface: ordinary BPF is well suited to verifier-backed safety, but it is not the right interface for expressing hardware-efficient idioms.
+    \item We design and implement \tool, which introduces kinsn and a post-deployment compilation boundary that keeps optimization policy in userspace and reuses the existing verifier for safety.
+    \item We show that live recompilation improves generated code and end-to-end performance, preserves safety, and keeps kernel complexity small.
 \end{itemize}
