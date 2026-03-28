@@ -63,7 +63,7 @@ Figure~\ref{fig:ebpf} shows the standard eBPF execution path. In the standard de
 
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=0.8\linewidth]{figures/sec-2-ebpf.pdf}
+  \includegraphics[width=0.6\linewidth]{figures/sec-2-ebpf.pdf}
   \caption{eBPF execution pipeline. C source is compiled to BPF bytecode, verified and JIT-compiled at load time, then executed as native x86 code at runtime via kernel hooks.}
   \label{fig:ebpf}
 \end{figure}
@@ -73,15 +73,11 @@ Figure~\ref{fig:ebpf} shows the standard eBPF execution path. In the standard de
 
 The current compilation pipeline still leaves room for target-specific optimization. A simple example is a 64-bit rotate used in a hash-style computation. At the source level, the programmer expresses one semantic operation: rotate a 64-bit value left by a constant amount, as shown in Figure~\ref{fig:rotate-gap}. A userspace toolchain like LLVM optimizes this to use the accelerated \texttt{rol} instruction.
 
-% [] %note{hao: we can add a bar in this figure to separate the top and bottom and show clearly that the top part is the existing result, and the bottom is with kinsn, which requires one kinsn and two native insns only.}
+% [addressed] %note{hao: we can add a bar in this figure to separate the top and bottom and show clearly that the top part is the existing result, and the bottom is with kinsn, which requires one kinsn and two native insns only.}
 \begin{figure}[htbp]
   \centering
   \includegraphics[width=\linewidth]{figures/sec-2-example.pdf}
-    \caption{A 64-bit rotate loses semantic structure as it moves through the
-    current pipeline. The source-level rotate idiom is flattened into ordinary
-    eBPF shifts and an \texttt{or}; the current x86 JIT therefore emits a longer
-    shift/or sequence instead of the more direct \texttt{rol} idiom that the
-    target ISA already supports.}
+    \caption{A 64-bit rotate loses semantic structure as it moves through the current pipeline. The source-level rotate idiom is flattened into ordinary eBPF shifts and an \texttt{or}; the current x86 JIT therefore emits a longer shift/or sequence instead of the more direct \texttt{rol} idiom that the target ISA already supports.}
     \label{fig:rotate-gap}
 \end{figure}
 
@@ -89,5 +85,8 @@ Ordinary eBPF, however, does not contain an optimized bytecode instruction, so c
 
 The example above illustrates a fundamental limitation of the current pipeline. Ordinary eBPF uses a primitive bytecode ISA, which keeps verifier reasoning simple and makes programs portable across architectures. But the same bytecode form does not preserve all optimization-relevant source semantics. Once operations (e.g., rotate or select) have been decomposed before entering the kernel, recovering equally efficient native code later would require substantially more analysis and target-specific logic in the in-kernel JIT. The issue, therefore, is that one bytecode form is being used both as a proof form for verification and as the input to native code generation.
 
-% [] \note{hao: we can explain this example from three angles. For the compiler, kinsn extends the instruction choices; for the verifier, kinsn is lowered to its equivalent defs (maybe show this in the figure that the verifier still sees the 'ordinary BPF'), so no additional changes to the verifier's algorithm; for jit, it implements the machanim and lowers it to native. Three angles and callbacks to our design.}
-A cleaner pipeline organization uses different bytecode ISAs for optimization and verification. We realize this organization with kinsn, an extensible, safe optimization-facing ISA, while retaining ordinary eBPF as the bytecode verified by the kernel (Section~\ref{sec:kinsn}). For verification, a kinsn program is expanded into a semantics-equivalent ordinary-eBPF program, which is then submitted to the kernel's existing verifier. This path reuses the current verification interface and keeps ordinary eBPF as the proof form checked in kernel space. For code generation, the same kinsn program is lowered directly to target code while its higher-level semantics are still explicit. This path enables the compiler to select efficient target instructions without requiring the in-kernel JIT to recover those semantics after they have been flattened. This separation allows sophisticated optimization to remain in userspace, while reusing the existing verifier in the kernel and keeping the in-kernel JIT simple.
+% [addressed?] \note{hao: we can explain this example from three angles. For the compiler, kinsn extends the instruction choices; for the verifier, kinsn is lowered to its equivalent defs (maybe show this in the figure that the verifier still sees the 'ordinary BPF'), so no additional changes to the verifier's algorithm; for jit, it implements the machanim and lowers it to native. Three angles and callbacks to our design.}
+%
+% This example suggests that the ISA used to preserve optimization intent need not be the same ISA used for kernel verification. We realize this separation with \emph{kinsn} (Section~\ref{sec:kinsn}). For the compiler, kinsn adds explicit instruction choices such as rotate, instead of forcing those operations to be flattened early into ordinary eBPF. For the verifier, kinsn introduces no new checking algorithm: each site is first expanded into a semantics-equivalent ordinary-eBPF sequence, and the kernel continues to verify ordinary eBPF. For the JIT, the original kinsn site is lowered directly to native code while its semantics are still explicit, enabling efficient target instructions such as \texttt{rol}. The result is a cleaner split of responsibilities: rich optimization in userspace, existing verification in the kernel, and a simpler in-kernel JIT.
+
+The key observation is that using one bytecode form both as the verifier-facing representation and as the input to native code generation creates conflicting design goals. Verification prefers a small, canonical ISA that the kernel can reason about uniformly across targets, whereas code generation benefits from retaining higher-level operations as explicit semantic units until late lowering. The key insight is therefore to decouple them: the bytecode form that preserves optimization intent need not be the same bytecode form that is submitted to the verifier. Section~\ref{sec:kinsn} introduces \emph{kinsn}, the bytecode abstraction that realizes this separation.

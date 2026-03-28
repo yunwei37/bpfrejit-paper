@@ -68,14 +68,14 @@
 
 % [addressed] \note{Yusheng: rename section to \tool(bpfrejit) Design? You can frist say the design goal/princile 1, then say the challenge and our key insight again 2, then Merge Overall Workflow and Deplyment mode into one subsection as 3; }
 
-% \note{Yusheng: TODO, not need to describe mode here, it's just impl detail for test purpose. You can remove the Apply-all, describe the watch mode, and try to illustrate what it's different from traditional eBPF end to end deployment workflow in background}
+% [addressed] \note{Yusheng: TODO, not need to describe mode here, it's just impl detail for test purpose. You can remove the Apply-all, describe the watch mode, and try to illustrate what it's different from traditional eBPF end to end deployment workflow in background}
 
 Using kinsn as the optimization-facing program form introduced in Section~\ref{sec:kinsn}, \tool adds a post-load recompilation loop for live eBPF programs. Figure~\ref{fig:workflow} summarizes this loop. After a program is loaded and attached, the kernel keeps the ordinary JIT fast path running and saves the original bytecode as a stable baseline for future rewrites. A privileged userspace daemon discovers a live program, combines that baseline with deployment facts such as runtime profiles and stable values, and rewrites one whole-program candidate. The kernel then re-verifies that candidate, re-JITs it, and replaces the native image in place for the same logical program. This organization gives userspace control over which optimization or hardening candidate to try, while the kernel remains the final authority on legality and safety. The rest of this section states the design contract of this loop, identifies the two implementation constraints that shape it, and then walks through one optimization cycle in detail.
 
 \begin{figure}[hbtp]
     \centering
     \includegraphics[width=1\linewidth]{figures/sec-4-arch.pdf}
-    \caption{Overview of \tool. The daemon reads a live program, rewrites a whole program in userspace, and sends it back to the kernel; the kernel re-verifies, re-JITs, and replaces the JIT code in place.}
+    \caption{Overview of \tool. The daemon reads a live program, rewrites a whole program in userspace, and sends it back to the kernel; the kernel re-verifies, re-JITs, and replaces the JIT code in place. \note{wrong, need update}}
     \label{fig:workflow}
 \end{figure}
 
