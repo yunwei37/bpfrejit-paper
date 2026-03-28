@@ -23,9 +23,9 @@ We propose \tool, an extensible deployment-time eBPF compilation framework. \too
 \noindent\textbf{Contributions.}
 This paper makes three contributions:
 \begin{itemize}
-    \item We show with corpus-scale evidence that optimization profitability for kernel eBPF programs is deployment-dependent: statically applying peephole optimizations regresses 68\% of real programs. This motivates deployment-time, context-adaptive optimization.
-    \item We design and implement \tool, which offloads optimization to an untrusted userspace daemon operating at the bytecode level, with the kernel's existing verifier as the safety gate. The kernel provides only mechanism (REJIT syscall and kinsn); the daemon provides all policy. Kernel changes total ${\sim}600$ lines of code.
-    \item We demonstrate that \tool eliminates static regressions and improves end-to-end performance on real deployments while preserving verifier-backed safety, enabling both hardware specialization and runtime specialization through the same framework.
+    \item We characterize the code-generation gap between eBPF's kernel JIT and LLVM backends, and show that optimization profitability is deployment-dependent.
+    \item We design and implement \tool, which offloads optimization to untrusted userspace at the bytecode level, using the kernel verifier as safety gate with minimal kernel changes.
+    \item Evaluation shows that \tool achieves up to 40\% improvement on production workloads while preserving verifier-backed safety.
 \end{itemize}
 
 %%%%%%%%%%%%% KEY INSIGHT — canonical phrasing %%%%%%%%%%%%%
