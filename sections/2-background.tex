@@ -37,8 +37,4 @@ This section introduces the standard eBPF execution pipeline (§\ref{subsec:ebpf
 
 Figure~\ref{fig:ebpf} shows the standard eBPF execution path. In the standard deployment path, developers write a BPF program in C, compile it in userspace with Clang/LLVM into an object file containing ordinary eBPF bytecode, and load that bytecode through the \texttt{bpf(BPF\_PROG\_LOAD)} syscall. Before the program executes in kernel context, the verifier perform various safety checks on the submitted bytecode, such as control-flow validity and memory safety~\cite{linuxkernel_bpf_verifier}. After verification, the kernel performs JIT compilation, which lowers accepted eBPF bytecode to native machine code before execution~\cite{ebpf_jit}. The compiled program is then attached to the hook defined by its program metadata. Programs are invoked at runtime by kernel events such as packet arrival. Unlike mature runtimes that employ tiered recompilation and profile-guided optimization~\cite{jvm_hotspot,v8_turbofan,llvm}, the eBPF kernel JIT performs a single, one-shot translation at load time with no subsequent recompilation, runtime feedback, or optimization passes.
 
-\begin{figure}[htbp]
-  \centering
-  \includegraphics[width=0.6\linewidth]{figures/sec-2-ebpf.pdf}
-  \caption{eBPF execution pipeline. C source is compiled to BPF bytecode, verified and JIT-compiled at load time, then executed as native x86 code at runtime via kernel hooks.}
-  \label{fig:ebpf}\end{figure}
+\input{figures/sec-2-ebpf}

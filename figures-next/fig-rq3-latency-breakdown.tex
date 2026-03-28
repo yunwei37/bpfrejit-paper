@@ -1,7 +1,44 @@
 % Synthetic placeholder figure generated from experiment/sec-5-rq3-online-overhead/data/request_latency.csv and pipeline_breakdown.csv
 \begin{figure}[t]
   \centering
-  \includegraphics[width=\linewidth]{figures-next/rq3-latency-breakdown.pdf}
+  \begin{tikzpicture}
+    \begin{axis}[
+      bpfplot,
+      width=\linewidth,
+      height=0.72\linewidth,
+      xbar,
+      xmin=0,
+      xmax=7.5,
+      xlabel={Latency contribution (ms)},
+      ytick=data,
+      y dir=reverse,
+      symbolic y coords={enum,fetch,analyze,rewrite,verify,jit,publish},
+      enlarge y limits=0.08,
+      bar width=5pt,
+      legend columns=2,
+      legend style={at={(0.5,1.08)}, anchor=south}
+    ]
+      \addplot[fill=bpfBlue!75, draw=bpfBlue!75] coordinates {
+        (0.3,enum)
+        (0.5,fetch)
+        (0.7,analyze)
+        (0.4,rewrite)
+        (3.6,verify)
+        (1.8,jit)
+        (0.3,publish)
+      };
+      \addplot[fill=bpfOrange!80, draw=bpfOrange!80] coordinates {
+        (0.4,enum)
+        (0.8,fetch)
+        (1.4,analyze)
+        (0.9,rewrite)
+        (6.7,verify)
+        (3.2,jit)
+        (0.5,publish)
+      };
+      \legend{small target,large target}
+    \end{axis}
+  \end{tikzpicture}
   \caption{Per-operation reJIT latency breakdown for small and large targets. In both cases, verifier and JIT dominate the end-to-end cost after request dispatch is amortized. \note{rq-3-exp-1}}
   \label{fig:rq3-latency-breakdown}
 \end{figure}

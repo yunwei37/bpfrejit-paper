@@ -1,7 +1,51 @@
 % Synthetic placeholder figure generated from experiment/sec-5-rq2-application-benefit/data/corpus_runtime.csv
 \begin{figure}[t]
   \centering
-  \includegraphics[width=\linewidth]{figures-next/rq2-corpus-runtime.pdf}
+  \begin{tikzpicture}
+    \begin{axis}[
+      bpfplot,
+      width=\linewidth,
+      height=0.78\linewidth,
+      xbar,
+      xmin=0.95,
+      xmax=1.20,
+      xlabel={Execution speedup over stock},
+      ytick=data,
+      y dir=reverse,
+      symbolic y coords={
+        katran ingress,
+        loxilb nat,
+        cilium lb,
+        tracee net,
+        calico tc,
+        xdp router,
+        tetragon tcp,
+        capable,
+        tracee exec,
+        cgroup audit,
+        opensnoop,
+        scx sched
+      },
+      enlarge y limits=0.04
+    ]
+      \addplot[fill=bpfBlue!75, draw=bpfBlue!75] coordinates {
+        (1.18,katran ingress)
+        (1.14,loxilb nat)
+        (1.11,cilium lb)
+        (1.09,tracee net)
+        (1.08,calico tc)
+        (1.06,xdp router)
+        (1.06,tetragon tcp)
+        (1.05,capable)
+        (1.04,tracee exec)
+        (1.02,cgroup audit)
+        (0.99,opensnoop)
+        (0.97,scx sched)
+      };
+      \addplot[bpfRed, dashed, thick] coordinates {(1.06,katran ingress) (1.06,scx sched)};
+      \node[font=\scriptsize, anchor=south west, text=bpfRed] at (axis cs:1.061,scx sched) {median = 1.06x};
+    \end{axis}
+  \end{tikzpicture}
   \caption{Per-program speedups on the runnable real-program subset. The synthetic placeholder distribution has a median 1.06x speedup and no catastrophic outliers. \note{rq-2-exp-1}}
   \label{fig:rq2-corpus-runtime}
 \end{figure}

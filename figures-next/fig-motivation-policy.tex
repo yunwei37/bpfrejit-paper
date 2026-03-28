@@ -1,7 +1,52 @@
 % Synthetic placeholder figure generated from experiment/sec-3-policy-sensitivity/data/*.csv
 \begin{figure*}[t]
   \centering
-  \includegraphics[width=\linewidth]{figures-next/motivation-policy.pdf}
+  \begin{tikzpicture}
+    \begin{groupplot}[
+      group style={group size=2 by 1, horizontal sep=1.5cm},
+      bpfplot,
+      width=0.45\textwidth,
+      height=0.32\textwidth,
+      xbar,
+      xmin=-10.5,
+      xmax=10.5,
+      xtick={-10,-5,0,5,10},
+      xlabel={Performance delta vs stock (\%)},
+      ytick=data,
+      y dir=reverse,
+      symbolic y coords={hash mix,binary search,flow parser,trace filter,svc lookup,policy eval,xdp router},
+      enlarge y limits=0.12,
+      nodes near coords,
+      every node near coord/.append style={font=\scriptsize},
+      point meta=x
+    ]
+      \nextgroupplot[title={(a) Single pass: select lowering}]
+        \addplot[fill=bpfBlue!75, draw=bpfBlue!75] coordinates {
+          (8.2,hash mix)
+          (5.4,flow parser)
+          (3.1,svc lookup)
+          (1.8,xdp router)
+        };
+        \addplot[fill=bpfOrange!80, draw=bpfOrange!80] coordinates {
+          (-4.6,binary search)
+          (-2.1,trace filter)
+          (-3.7,policy eval)
+        };
+
+      \nextgroupplot[title={(b) Fixed bundle: select + rotate + cleanup}]
+        \addplot[fill=bpfBlue!75, draw=bpfBlue!75] coordinates {
+          (10.1,hash mix)
+          (4.7,flow parser)
+          (6.2,svc lookup)
+          (2.4,xdp router)
+        };
+        \addplot[fill=bpfOrange!80, draw=bpfOrange!80] coordinates {
+          (-6.0,binary search)
+          (-1.4,trace filter)
+          (-5.1,policy eval)
+        };
+    \end{groupplot}
+  \end{tikzpicture}
   \caption{Policy sensitivity of legal rewrites. Panel~(a) shows one legal pass across several workloads; panel~(b) shows a fixed multi-pass bundle across the same style of workloads. In both panels, some programs improve while others regress, illustrating why no single static optimization policy dominates across deployed workloads.}
   \label{fig:motivation-policy}
 \end{figure*}

@@ -57,12 +57,7 @@
 The current compilation pipeline still leaves room for target-specific optimization. A simple example is a 64-bit rotate used in a hash-style computation. At the source level, the programmer expresses one semantic operation: rotate a 64-bit value left by a constant amount, as shown in Figure~\ref{fig:rotate-gap}. A userspace toolchain like LLVM optimizes this to use the accelerated \texttt{rol} instruction.
 
 % [addressed] %note{hao: we can add a bar in this figure to separate the top and bottom and show clearly that the top part is the existing result, and the bottom is with kinsn, which requires one kinsn and two native insns only.}
-\begin{figure}[htbp]
-  \centering
-  \includegraphics[width=\linewidth]{figures/sec-2-example.pdf}
-    \caption{A 64-bit rotate loses semantic structure as it moves through the current pipeline. The source-level rotate idiom is flattened into ordinary eBPF shifts and an \texttt{or}; the current x86 JIT therefore emits a longer shift/or sequence instead of the more direct \texttt{rol} idiom that the target ISA already supports.}
-    \label{fig:rotate-gap}
-\end{figure}
+\input{figures/sec-2-example}
 
 Ordinary eBPF, however, does not contain an optimized bytecode instruction, so cannot preserve that rotate as a first-class instruction. By the time the kernel JIT receives the program, the operation has already been expanded into a sequence of shifts and an \texttt{or}. As a result, the native code emitted by the JIT can be longer, less direct and less performant than the native target ISA can support.
 

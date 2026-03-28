@@ -3,7 +3,63 @@
 \usepackage{xcolor}
 \usepackage{caption}
 \usepackage{tikz}
+\usepackage{pgfplots}
 \usepackage{listings}
+
+\usetikzlibrary{arrows.meta, backgrounds, calc, fit, matrix, patterns, positioning, shapes.geometric}
+\usepgfplotslibrary{groupplots}
+\pgfplotsset{compat=1.18}
+
+\definecolor{bpfBlue}{RGB}{39,87,154}
+\definecolor{bpfTeal}{RGB}{29,122,117}
+\definecolor{bpfOrange}{RGB}{214,118,40}
+\definecolor{bpfRed}{RGB}{179,61,61}
+\definecolor{bpfGray}{RGB}{91,99,108}
+\definecolor{bpfLight}{RGB}{243,245,247}
+\definecolor{bpfGreen}{RGB}{76,140,43}
+
+\tikzset{
+    bpfbox/.style={
+        draw=bpfGray,
+        fill=bpfLight,
+        rounded corners=2pt,
+        thick,
+        align=center,
+        inner sep=5pt
+    },
+    bpfgroup/.style={
+        draw=bpfGray,
+        rounded corners=4pt,
+        inner sep=8pt
+    },
+    bpfarrow/.style={
+        -{Latex[length=2.2mm]},
+        thick,
+        draw=bpfGray
+    },
+    bpfline/.style={
+        thick,
+        draw=bpfGray
+    },
+    bpfdashed/.style={
+        draw=bpfGray,
+        densely dashed
+    }
+}
+
+\pgfplotsset{
+    bpfplot/.style={
+        tick label style={font=\scriptsize},
+        label style={font=\scriptsize},
+        title style={font=\small\bfseries},
+        legend style={font=\scriptsize, draw=none, fill=none},
+        axis line style={draw=bpfGray},
+        tick style={draw=bpfGray},
+        grid=major,
+        grid style={draw=black!8},
+        minor tick num=1
+    }
+}
 
 \lstdefinestyle{motivationcode}{
     basicstyle=\ttfamily\footnotesize,

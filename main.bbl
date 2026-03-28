@@ -1,0 +1,518 @@
+%%% -*-BibTeX-*-
+%%% Do NOT edit. File created by BibTeX with style
+%%% ACM-Reference-Format-Journals [18-Jan-2012].
+
+\begin{thebibliography}{33}
+
+%%% ====================================================================
+%%% NOTE TO THE USER: you can override these defaults by providing
+%%% customized versions of any of these macros before the \bibliography
+%%% command.  Each of them MUST provide its own final punctuation,
+%%% except for \shownote{}, \showDOI{}, and \showURL{}.  The latter two
+%%% do not use final punctuation, in order to avoid confusing it with
+%%% the Web address.
+%%%
+%%% To suppress output of a particular field, define its macro to expand
+%%% to an empty string, or better, \unskip, like this:
+%%%
+%%% \newcommand{\showDOI}[1]{\unskip}   % LaTeX syntax
+%%%
+%%% \def \showDOI #1{\unskip}           % plain TeX syntax
+%%%
+%%% ====================================================================
+
+\ifx \showCODEN    \undefined \def \showCODEN     #1{\unskip}     \fi
+\ifx \showDOI      \undefined \def \showDOI       #1{#1}\fi
+\ifx \showISBNx    \undefined \def \showISBNx     #1{\unskip}     \fi
+\ifx \showISBNxiii \undefined \def \showISBNxiii  #1{\unskip}     \fi
+\ifx \showISSN     \undefined \def \showISSN      #1{\unskip}     \fi
+\ifx \showLCCN     \undefined \def \showLCCN      #1{\unskip}     \fi
+\ifx \shownote     \undefined \def \shownote      #1{#1}          \fi
+\ifx \showarticletitle \undefined \def \showarticletitle #1{#1}   \fi
+\ifx \showURL      \undefined \def \showURL       {\relax}        \fi
+% The following commands are used for tagged output and should be
+% invisible to TeX
+\providecommand\bibfield[2]{#2}
+\providecommand\bibinfo[2]{#2}
+\providecommand\natexlab[1]{#1}
+\providecommand\showeprint[2][]{arXiv:#2}
+
+\bibitem[Bertin et~al\mbox{.}(2019)]%
+        {katran}
+\bibfield{author}{\bibinfo{person}{Maxim Bertin}, \bibinfo{person}{Zakir
+  Durumeric}, {and} \bibinfo{person}{Vern Paxson}.}
+  \bibinfo{year}{2019}\natexlab{}.
+\newblock \showarticletitle{{Katran}: A high performance layer 4 load
+  balancer}. In \bibinfo{booktitle}{\emph{USENIX NSDI}}.
+\newblock
+
+
+\bibitem[Borkmann et~al\mbox{.}(2016)]%
+        {cilium}
+\bibfield{author}{\bibinfo{person}{Daniel Borkmann},
+  \bibinfo{person}{Starovoitov Alexei}, {et~al\mbox{.}}}
+  \bibinfo{year}{2016}\natexlab{}.
+\newblock \showarticletitle{{Cilium}: {BPF} and {XDP} for containers}. In
+  \bibinfo{booktitle}{\emph{Linux Plumbers Conference}}.
+\newblock
+
+
+\bibitem[Community(2024a)]%
+        {linux_bpf_jit}
+\bibfield{author}{\bibinfo{person}{Linux~Kernel Community}.}
+  \bibinfo{year}{2024}\natexlab{a}.
+\newblock \bibinfo{title}{{Linux} Kernel {BPF} {JIT} Compiler
+  ({arch/x86/net/bpf\_jit\_comp.c})}.
+\newblock
+  \bibinfo{howpublished}{\url{https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git}}.
+\newblock
+
+
+\bibitem[Community(2024b)]%
+        {sched_ext}
+\bibfield{author}{\bibinfo{person}{Linux~Kernel Community}.}
+  \bibinfo{year}{2024}\natexlab{b}.
+\newblock \bibinfo{title}{sched\_ext: {BPF} extensible scheduler class}.
+\newblock \bibinfo{howpublished}{\url{https://lwn.net/Articles/922405/}}.
+\newblock
+
+
+\bibitem[Dwivedi et~al\mbox{.}(2024)]%
+        {dwivedi2024fast}
+\bibfield{author}{\bibinfo{person}{Kumar~Kartikeya Dwivedi},
+  \bibinfo{person}{Rishabh Iyer}, {and} \bibinfo{person}{Sanidhya Kashyap}.}
+  \bibinfo{year}{2024}\natexlab{}.
+\newblock \showarticletitle{Fast, Flexible, and Practical Kernel Extensions}.
+  In \bibinfo{booktitle}{\emph{Proceedings of the ACM SIGOPS 30th Symposium on
+  Operating Systems Principles}} (Austin, TX, USA) \emph{(\bibinfo{series}{SOSP
+  '24})}. \bibinfo{publisher}{Association for Computing Machinery},
+  \bibinfo{address}{New York, NY, USA}, \bibinfo{pages}{249–264}.
+\newblock
+\showISBNx{9798400712517}
+\urldef\tempurl%
+\url{https://doi.org/10.1145/3694715.3695950}
+\showDOI{\tempurl}
+
+
+\bibitem[{eBPF.io Authors}({[n.\,d.]})]%
+        {ebpf_jit}
+\bibfield{author}{\bibinfo{person}{{eBPF.io Authors}}.}
+  \bibinfo{year}{[n.\,d.]}\natexlab{}.
+\newblock \bibinfo{title}{What is {eBPF}? --- {JIT} Compilation}.
+\newblock
+  \bibinfo{howpublished}{\url{https://ebpf.io/what-is-ebpf/\#jit-compilation}}.
+\newblock
+\newblock
+\shownote{Accessed: 2025-03-25}.
+
+
+\bibitem[Gerhorst et~al\mbox{.}(2024)]%
+        {gerhorst2024verifence}
+\bibfield{author}{\bibinfo{person}{Luis Gerhorst}, \bibinfo{person}{Henriette
+  Herzog}, \bibinfo{person}{Peter W\"{a}gemann}, \bibinfo{person}{Maximilian
+  Ott}, \bibinfo{person}{R\"{u}diger Kapitza}, {and} \bibinfo{person}{Timo
+  H\"{o}nig}.} \bibinfo{year}{2024}\natexlab{}.
+\newblock \showarticletitle{VeriFence: Lightweight and Precise Spectre Defenses
+  for Untrusted Linux Kernel Extensions}. In
+  \bibinfo{booktitle}{\emph{Proceedings of the 27th International Symposium on
+  Research in Attacks, Intrusions and Defenses}} (Padua, Italy)
+  \emph{(\bibinfo{series}{RAID '24})}. \bibinfo{publisher}{Association for
+  Computing Machinery}, \bibinfo{address}{New York, NY, USA},
+  \bibinfo{pages}{644–659}.
+\newblock
+\showISBNx{9798400709593}
+\urldef\tempurl%
+\url{https://doi.org/10.1145/3678890.3678907}
+\showDOI{\tempurl}
+
+
+\bibitem[Gershuni et~al\mbox{.}(2019)]%
+        {gershuni2019simple}
+\bibfield{author}{\bibinfo{person}{Elazar Gershuni}, \bibinfo{person}{Nadav
+  Amit}, \bibinfo{person}{Arie Gurfinkel}, \bibinfo{person}{Nina Narodytska},
+  \bibinfo{person}{Jorge~A. Navas}, \bibinfo{person}{Noam Rinetzky},
+  \bibinfo{person}{Leonid Ryzhyk}, {and} \bibinfo{person}{Mooly Sagiv}.}
+  \bibinfo{year}{2019}\natexlab{}.
+\newblock \showarticletitle{Simple and precise static analysis of untrusted
+  Linux kernel extensions}. In \bibinfo{booktitle}{\emph{Proceedings of the
+  40th ACM SIGPLAN Conference on Programming Language Design and
+  Implementation}} (Phoenix, AZ, USA) \emph{(\bibinfo{series}{PLDI 2019})}.
+  \bibinfo{publisher}{Association for Computing Machinery},
+  \bibinfo{address}{New York, NY, USA}, \bibinfo{pages}{1069–1084}.
+\newblock
+\showISBNx{9781450367127}
+\urldef\tempurl%
+\url{https://doi.org/10.1145/3314221.3314590}
+\showDOI{\tempurl}
+
+
+\bibitem[Jia et~al\mbox{.}(2025)]%
+        {jia2025rex}
+\bibfield{author}{\bibinfo{person}{Jinghao Jia}, \bibinfo{person}{Ruowen Qin},
+  \bibinfo{person}{Milo Craun}, \bibinfo{person}{Egor Lukiyanov},
+  \bibinfo{person}{Ayush Bansal}, \bibinfo{person}{Minh Phan},
+  \bibinfo{person}{Michael~V. Le}, \bibinfo{person}{Hubertus Franke},
+  \bibinfo{person}{Hani Jamjoom}, \bibinfo{person}{Tianyin Xu}, {and}
+  \bibinfo{person}{Dan Williams}.} \bibinfo{year}{2025}\natexlab{}.
+\newblock \showarticletitle{Rex: Closing the language-verifier gap with safe
+  and usable kernel extensions}. In \bibinfo{booktitle}{\emph{Proceedings of
+  the 2025 USENIX Annual Technical Conference (USENIX ATC '25)}}.
+  \bibinfo{publisher}{USENIX Association}.
+\newblock
+\urldef\tempurl%
+\url{https://www.usenix.org/conference/atc25/presentation/jia}
+\showURL{%
+\tempurl}
+
+
+\bibitem[Jin et~al\mbox{.}(2024)]%
+        {jin2024beebox}
+\bibfield{author}{\bibinfo{person}{Di Jin}, \bibinfo{person}{Alexander~J.
+  Gaidis}, {and} \bibinfo{person}{Vasileios~P. Kemerlis}.}
+  \bibinfo{year}{2024}\natexlab{}.
+\newblock \showarticletitle{{BeeBox}: Hardening {BPF} against Transient
+  Execution Attacks}. In \bibinfo{booktitle}{\emph{33rd USENIX Security
+  Symposium (USENIX Security 24)}}. \bibinfo{publisher}{USENIX Association},
+  \bibinfo{address}{Philadelphia, PA}, \bibinfo{pages}{613--630}.
+\newblock
+\showISBNx{978-1-939133-44-1}
+\urldef\tempurl%
+\url{https://www.usenix.org/conference/usenixsecurity24/presentation/jin-di}
+\showURL{%
+\tempurl}
+
+
+\bibitem[kernel~development community(2026)]%
+        {verifier}
+\bibfield{author}{\bibinfo{person}{The kernel~development community}.}
+  \bibinfo{year}{2026}\natexlab{}.
+\newblock \bibinfo{title}{eBPF verifier}.
+\newblock
+  \bibinfo{howpublished}{\url{https://docs.kernel.org/bpf/verifier.html}}.
+\newblock
+
+
+\bibitem[Kuo et~al\mbox{.}(2022)]%
+        {kfuse}
+\bibfield{author}{\bibinfo{person}{Hsuan-Chi Kuo}, \bibinfo{person}{Kai-Hsun
+  Chen}, \bibinfo{person}{Yicheng Lu}, \bibinfo{person}{Dan Williams},
+  \bibinfo{person}{Sibin Mohan}, {and} \bibinfo{person}{Tianyin Xu}.}
+  \bibinfo{year}{2022}\natexlab{}.
+\newblock \showarticletitle{Verified programs can party: optimizing kernel
+  extensions via post-verification merging}. In
+  \bibinfo{booktitle}{\emph{Proceedings of the Seventeenth European Conference
+  on Computer Systems}} (Rennes, France) \emph{(\bibinfo{series}{EuroSys
+  '22})}. \bibinfo{publisher}{Association for Computing Machinery},
+  \bibinfo{address}{New York, NY, USA}, \bibinfo{pages}{283–299}.
+\newblock
+\showISBNx{9781450391627}
+\urldef\tempurl%
+\url{https://doi.org/10.1145/3492321.3519562}
+\showDOI{\tempurl}
+
+
+\bibitem[Lattner and Adve(2004)]%
+        {llvm}
+\bibfield{author}{\bibinfo{person}{Chris Lattner} {and} \bibinfo{person}{Vikram
+  Adve}.} \bibinfo{year}{2004}\natexlab{}.
+\newblock \showarticletitle{{LLVM}: A compilation framework for lifelong
+  program analysis \& transformation}.
+\newblock \bibinfo{journal}{\emph{International Symposium on Code Generation
+  and Optimization (CGO)}} (\bibinfo{year}{2004}), \bibinfo{pages}{75--86}.
+\newblock
+
+
+\bibitem[Lim et~al\mbox{.}(2023)]%
+        {lim2023unleashing}
+\bibfield{author}{\bibinfo{person}{Soo~Yee Lim}, \bibinfo{person}{Xueyuan Han},
+  {and} \bibinfo{person}{Thomas Pasquier}.} \bibinfo{year}{2023}\natexlab{}.
+\newblock \bibinfo{title}{Unleashing Unprivileged eBPF Potential with Dynamic
+  Sandboxing}.
+\newblock
+\newblock
+\showeprint[arxiv]{2308.01983}~[cs.OS]
+\urldef\tempurl%
+\url{https://arxiv.org/abs/2308.01983}
+\showURL{%
+\tempurl}
+
+
+\bibitem[Lim et~al\mbox{.}(2024)]%
+        {soo2024safebpf}
+\bibfield{author}{\bibinfo{person}{Soo~Yee Lim}, \bibinfo{person}{Tanya
+  Prasad}, \bibinfo{person}{Xueyuan Han}, {and} \bibinfo{person}{Thomas
+  Pasquier}.} \bibinfo{year}{2024}\natexlab{}.
+\newblock \showarticletitle{SafeBPF: Hardware-assisted Defense-in-depth for
+  eBPF Kernel Extensions}. In \bibinfo{booktitle}{\emph{Proceedings of the 2024
+  on Cloud Computing Security Workshop}} (Salt Lake City, UT, USA)
+  \emph{(\bibinfo{series}{CCSW '24})}. \bibinfo{publisher}{Association for
+  Computing Machinery}, \bibinfo{address}{New York, NY, USA},
+  \bibinfo{pages}{80–94}.
+\newblock
+\showISBNx{9798400712340}
+\urldef\tempurl%
+\url{https://doi.org/10.1145/3689938.3694781}
+\showDOI{\tempurl}
+
+
+\bibitem[Lyu et~al\mbox{.}(2025)]%
+        {lyu2025ebpf}
+\bibfield{author}{\bibinfo{person}{Tao Lyu}, \bibinfo{person}{Kumar~Kartikeya
+  Dwivedi}, \bibinfo{person}{Thomas Bourgeat}, \bibinfo{person}{Mathias Payer},
+  \bibinfo{person}{Meng Xu}, {and} \bibinfo{person}{Sanidhya Kashyap}.}
+  \bibinfo{year}{2025}\natexlab{}.
+\newblock \showarticletitle{eBPF Misbehavior Detection: Fuzzing with a
+  Specification-Based Oracle}. In \bibinfo{booktitle}{\emph{Proceedings of the
+  ACM SIGOPS 31st Symposium on Operating Systems Principles}} (Lotte Hotel
+  World, Seoul, Republic of Korea) \emph{(\bibinfo{series}{SOSP '25})}.
+  \bibinfo{publisher}{Association for Computing Machinery},
+  \bibinfo{address}{New York, NY, USA}, \bibinfo{pages}{701–718}.
+\newblock
+\showISBNx{9798400718700}
+\urldef\tempurl%
+\url{https://doi.org/10.1145/3731569.3764797}
+\showDOI{\tempurl}
+
+
+\bibitem[Mao et~al\mbox{.}(2024)]%
+        {merlin}
+\bibfield{author}{\bibinfo{person}{Jinsong Mao}, \bibinfo{person}{Hailun Ding},
+  \bibinfo{person}{Juan Zhai}, {and} \bibinfo{person}{Shiqing Ma}.}
+  \bibinfo{year}{2024}\natexlab{}.
+\newblock \showarticletitle{Merlin: Multi-tier Optimization of eBPF Code for
+  Performance and Compactness}. In \bibinfo{booktitle}{\emph{Proceedings of the
+  29th ACM International Conference on Architectural Support for Programming
+  Languages and Operating Systems, Volume 3}} (La Jolla, CA, USA)
+  \emph{(\bibinfo{series}{ASPLOS '24})}. \bibinfo{publisher}{Association for
+  Computing Machinery}, \bibinfo{address}{New York, NY, USA},
+  \bibinfo{pages}{639–653}.
+\newblock
+\showISBNx{9798400703867}
+\urldef\tempurl%
+\url{https://doi.org/10.1145/3620666.3651387}
+\showDOI{\tempurl}
+
+
+\bibitem[Meurer and Titzer(2015)]%
+        {v8_turbofan}
+\bibfield{author}{\bibinfo{person}{Benedikt Meurer} {and}
+  \bibinfo{person}{Ben~L. Titzer}.} \bibinfo{year}{2015}\natexlab{}.
+\newblock \showarticletitle{TurboFan: A new code generation architecture for
+  {V8}}.
+\newblock
+\newblock
+\shownote{Google Munich Technical Talk.
+  \url{https://docs.google.com/presentation/d/1sOEF4MlF7LeO7uq-uThJSulJlTh--wgLeaVibsbb3tc}}.
+
+
+\bibitem[Nelson et~al\mbox{.}(2025)]%
+        {bcf}
+\bibfield{author}{\bibinfo{person}{Luke Nelson} {et~al\mbox{.}}}
+  \bibinfo{year}{2025}\natexlab{}.
+\newblock \showarticletitle{{BCF}: Certificate-Backed {BPF} Verification}. In
+  \bibinfo{booktitle}{\emph{Proceedings of the 30th ACM Symposium on Operating
+  Systems Principles (SOSP)}}. \bibinfo{publisher}{ACM}.
+\newblock
+
+
+\bibitem[Nelson et~al\mbox{.}(2020)]%
+        {nelson2020specification}
+\bibfield{author}{\bibinfo{person}{Luke Nelson}, \bibinfo{person}{Jacob
+  Van~Geffen}, \bibinfo{person}{Emina Torlak}, {and} \bibinfo{person}{Xi
+  Wang}.} \bibinfo{year}{2020}\natexlab{}.
+\newblock \showarticletitle{Specification and verification in the field:
+  applying formal methods to BPF just-in-time compilers in the Linux kernel}.
+  In \bibinfo{booktitle}{\emph{Proceedings of the 14th USENIX Conference on
+  Operating Systems Design and Implementation}}
+  \emph{(\bibinfo{series}{OSDI'20})}. \bibinfo{publisher}{USENIX Association},
+  \bibinfo{address}{USA}, Article \bibinfo{articleno}{3},
+  \bibinfo{numpages}{21}~pages.
+\newblock
+\showISBNx{978-1-939133-19-9}
+
+
+\bibitem[Paleczny et~al\mbox{.}(2001)]%
+        {jvm_hotspot}
+\bibfield{author}{\bibinfo{person}{Michael Paleczny},
+  \bibinfo{person}{Christopher Vick}, {and} \bibinfo{person}{Cliff Click}.}
+  \bibinfo{year}{2001}\natexlab{}.
+\newblock \showarticletitle{The {Java} {HotSpot}\texttrademark\ Server
+  Compiler}. In \bibinfo{booktitle}{\emph{Proceedings of the Java Virtual
+  Machine Research and Technology Symposium (JVM)}}. \bibinfo{pages}{1--12}.
+\newblock
+
+
+\bibitem[Peng et~al\mbox{.}(2024)]%
+        {peng2024toss}
+\bibfield{author}{\bibinfo{person}{Chaoyuan Peng}, \bibinfo{person}{Muhui
+  Jiang}, \bibinfo{person}{Lei Wu}, {and} \bibinfo{person}{Yajin Zhou}.}
+  \bibinfo{year}{2024}\natexlab{}.
+\newblock \showarticletitle{Toss a Fault to BpfChecker: Revealing
+  Implementation Flaws for eBPF runtimes with Differential Fuzzing}. In
+  \bibinfo{booktitle}{\emph{Proceedings of the 2024 on ACM SIGSAC Conference on
+  Computer and Communications Security}} (Salt Lake City, UT, USA)
+  \emph{(\bibinfo{series}{CCS '24})}. \bibinfo{publisher}{Association for
+  Computing Machinery}, \bibinfo{address}{New York, NY, USA},
+  \bibinfo{pages}{3928–3942}.
+\newblock
+\showISBNx{9798400706363}
+\urldef\tempurl%
+\url{https://doi.org/10.1145/3658644.3690237}
+\showDOI{\tempurl}
+
+
+\bibitem[Security(2024)]%
+        {tracee}
+\bibfield{author}{\bibinfo{person}{Aqua Security}.}
+  \bibinfo{year}{2024}\natexlab{}.
+\newblock \bibinfo{title}{Tracee: Runtime security and forensics using {eBPF}}.
+\newblock \bibinfo{howpublished}{\url{https://github.com/aquasecurity/tracee}}.
+\newblock
+
+
+\bibitem[Singh(2020)]%
+        {krsi}
+\bibfield{author}{\bibinfo{person}{KP Singh}.} \bibinfo{year}{2020}\natexlab{}.
+\newblock \bibinfo{title}{{BPF} {LSM}: {MAC} and Audit policy using {eBPF}}.
+\newblock \bibinfo{howpublished}{\url{https://lwn.net/Articles/808048/}}.
+\newblock
+
+
+\bibitem[Sun and Su(2024)]%
+        {sun2024validating}
+\bibfield{author}{\bibinfo{person}{Hao Sun} {and} \bibinfo{person}{Zhendong
+  Su}.} \bibinfo{year}{2024}\natexlab{}.
+\newblock \showarticletitle{Validating the {eBPF} Verifier via State
+  Embedding}. In \bibinfo{booktitle}{\emph{18th USENIX Symposium on Operating
+  Systems Design and Implementation (OSDI 24)}}. \bibinfo{publisher}{USENIX
+  Association}, \bibinfo{address}{Santa Clara, CA}, \bibinfo{pages}{615--628}.
+\newblock
+\showISBNx{978-1-939133-40-3}
+\urldef\tempurl%
+\url{https://www.usenix.org/conference/osdi24/presentation/sun-hao}
+\showURL{%
+\tempurl}
+
+
+\bibitem[{The Linux Kernel Community}({[n.\,d.]})]%
+        {linuxkernel_bpf_verifier}
+\bibfield{author}{\bibinfo{person}{{The Linux Kernel Community}}.}
+  \bibinfo{year}{[n.\,d.]}\natexlab{}.
+\newblock \bibinfo{title}{{eBPF} Verifier}.
+\newblock \bibinfo{howpublished}{The Linux Kernel Documentation}.
+\newblock
+\urldef\tempurl%
+\url{https://docs.kernel.org/bpf/verifier.html}
+\showURL{%
+\tempurl}
+\newblock
+\shownote{Accessed: 2025-03-25}.
+
+
+\bibitem[Vishwanathan et~al\mbox{.}(2023)]%
+        {vishwanathan2023verifying}
+\bibfield{author}{\bibinfo{person}{Harishankar Vishwanathan},
+  \bibinfo{person}{Matan Shachnai}, \bibinfo{person}{Srinivas Narayana}, {and}
+  \bibinfo{person}{Santosh Nagarakatte}.} \bibinfo{year}{2023}\natexlab{}.
+\newblock \showarticletitle{Verifying the Verifier: eBPF Range Analysis
+  Verification}. In \bibinfo{booktitle}{\emph{Computer Aided Verification: 35th
+  International Conference, CAV 2023, Paris, France, July 17–22, 2023,
+  Proceedings, Part III}} (Paris, France).
+  \bibinfo{publisher}{Springer-Verlag}, \bibinfo{address}{Berlin, Heidelberg},
+  \bibinfo{pages}{226–251}.
+\newblock
+\showISBNx{978-3-031-37708-2}
+\urldef\tempurl%
+\url{https://doi.org/10.1007/978-3-031-37709-9_12}
+\showDOI{\tempurl}
+
+
+\bibitem[Wang et~al\mbox{.}(2014)]%
+        {wang2014jitk}
+\bibfield{author}{\bibinfo{person}{Xi Wang}, \bibinfo{person}{David Lazar},
+  \bibinfo{person}{Nickolai Zeldovich}, \bibinfo{person}{Adam Chlipala}, {and}
+  \bibinfo{person}{Zachary Tatlock}.} \bibinfo{year}{2014}\natexlab{}.
+\newblock \showarticletitle{Jitk: a trustworthy in-kernel interpreter
+  infrastructure}. In \bibinfo{booktitle}{\emph{Proceedings of the 11th USENIX
+  Conference on Operating Systems Design and Implementation}} (Broomfield, CO)
+  \emph{(\bibinfo{series}{OSDI'14})}. \bibinfo{publisher}{USENIX Association},
+  \bibinfo{address}{USA}, \bibinfo{pages}{33–47}.
+\newblock
+\showISBNx{9781931971164}
+
+
+\bibitem[Wu et~al\mbox{.}(2025)]%
+        {wu2025vep}
+\bibfield{author}{\bibinfo{person}{Xiwei Wu}, \bibinfo{person}{Yueyang Feng},
+  \bibinfo{person}{Tianyi Huang}, \bibinfo{person}{Xiaoyang Lu},
+  \bibinfo{person}{Shengkai Lin}, \bibinfo{person}{Lihan Xie},
+  \bibinfo{person}{Shizhen Zhao}, {and} \bibinfo{person}{Qinxiang Cao}.}
+  \bibinfo{year}{2025}\natexlab{}.
+\newblock \showarticletitle{VEP: a two-stage verification tool chain for full
+  eBPF programmability}. In \bibinfo{booktitle}{\emph{Proceedings of the 22nd
+  USENIX Symposium on Networked Systems Design and Implementation}}
+  (Philadelphia, PA, USA) \emph{(\bibinfo{series}{NSDI '25})}.
+  \bibinfo{publisher}{USENIX Association}, \bibinfo{address}{USA}, Article
+  \bibinfo{articleno}{16}, \bibinfo{numpages}{23}~pages.
+\newblock
+\showISBNx{978-1-939133-46-5}
+
+
+\bibitem[Xu et~al\mbox{.}(2021)]%
+        {k2}
+\bibfield{author}{\bibinfo{person}{Qiongwen Xu}, \bibinfo{person}{Michael~D.
+  Wong}, \bibinfo{person}{Tanvi Wagle}, \bibinfo{person}{Srinivas Narayana},
+  {and} \bibinfo{person}{Anirudh Sivaraman}.} \bibinfo{year}{2021}\natexlab{}.
+\newblock \showarticletitle{Synthesizing safe and efficient kernel extensions
+  for packet processing}. In \bibinfo{booktitle}{\emph{Proceedings of the 2021
+  ACM SIGCOMM 2021 Conference}} (Virtual Event, USA)
+  \emph{(\bibinfo{series}{SIGCOMM '21})}. \bibinfo{publisher}{Association for
+  Computing Machinery}, \bibinfo{address}{New York, NY, USA},
+  \bibinfo{pages}{50–64}.
+\newblock
+\showISBNx{9781450383837}
+\urldef\tempurl%
+\url{https://doi.org/10.1145/3452296.3472929}
+\showDOI{\tempurl}
+
+
+\bibitem[Zheng et~al\mbox{.}(2025a)]%
+        {epass}
+\bibfield{author}{\bibinfo{person}{Yuhong Zheng} {et~al\mbox{.}}}
+  \bibinfo{year}{2025}\natexlab{a}.
+\newblock \showarticletitle{ePass: Extensible {BPF} Optimization Passes in the
+  Kernel}. In \bibinfo{booktitle}{\emph{Linux Plumbers Conference}}.
+\newblock
+
+
+\bibitem[Zheng et~al\mbox{.}(2025b)]%
+        {zheng2025extending}
+\bibfield{author}{\bibinfo{person}{Yusheng Zheng}, \bibinfo{person}{Tong Yu},
+  \bibinfo{person}{Yiwei Yang}, \bibinfo{person}{Yanpeng Hu},
+  \bibinfo{person}{Xiaozheng Lai}, \bibinfo{person}{Dan Williams}, {and}
+  \bibinfo{person}{Andi Quinn}.} \bibinfo{year}{2025}\natexlab{b}.
+\newblock \showarticletitle{Extending applications safely and efficiently}
+  \emph{(\bibinfo{series}{OSDI '25})}. \bibinfo{publisher}{USENIX Association},
+  \bibinfo{address}{USA}, Article \bibinfo{articleno}{31},
+  \bibinfo{numpages}{18}~pages.
+\newblock
+\showISBNx{978-1-939133-47-2}
+
+
+\bibitem[Zhu et~al\mbox{.}(2025)]%
+        {epso}
+\bibfield{author}{\bibinfo{person}{Qian Zhu}, \bibinfo{person}{Yuxuan Liu},
+  \bibinfo{person}{Ziyuan Zhu}, \bibinfo{person}{Shangqing Liu}, {and}
+  \bibinfo{person}{Lei Bu}.} \bibinfo{year}{2025}\natexlab{}.
+\newblock \bibinfo{title}{EPSO: A Caching-Based Efficient Superoptimizer for
+  BPF Bytecode}.
+\newblock
+\newblock
+\showeprint[arxiv]{2511.15589}~[cs.SE]
+\urldef\tempurl%
+\url{https://arxiv.org/abs/2511.15589}
+\showURL{%
+\tempurl}
+
+
+\end{thebibliography}

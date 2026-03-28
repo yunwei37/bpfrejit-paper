@@ -1,0 +1,56 @@
+% Synthetic placeholder figure generated from experiment/sec-5-rq4-safety-correctness/data/*.csv
+\begin{figure}[t]
+  \centering
+  \begin{tikzpicture}
+    \begin{groupplot}[
+      group style={group size=2 by 1, horizontal sep=1.2cm},
+      bpfplot,
+      width=0.45\linewidth,
+      height=0.58\linewidth
+    ]
+      \nextgroupplot[
+        title={(a) Targeted adversarial tests},
+        ybar stacked,
+        bar width=8pt,
+        ymin=0,
+        ymax=7,
+        symbolic x coords={memory safety,control flow,type safety,privilege,metadata},
+        xtick=data,
+        xticklabel style={font=\scriptsize, rotate=25, anchor=east},
+        ylabel={Invalid rewrite attempts},
+        legend columns=2,
+        legend style={at={(0.5,1.12)}, anchor=south}
+      ]
+        \addplot[fill=bpfBlue!75, draw=bpfBlue!75] coordinates {
+          (memory safety,6)
+          (control flow,6)
+          (type safety,6)
+          (privilege,6)
+          (metadata,6)
+        };
+        \addplot[fill=bpfOrange!80, draw=bpfOrange!80] coordinates {
+          (memory safety,0)
+          (control flow,0)
+          (type safety,0)
+          (privilege,0)
+          (metadata,0)
+        };
+        \legend{Rejected,Accepted}
+
+      \nextgroupplot[
+        title={(b) Randomized fail-safe test},
+        ybar stacked,
+        bar width=12pt,
+        ymin=0,
+        ymax=10,
+        symbolic x coords={Fuzzed bytecode},
+        xtick=data,
+        ylabel={Attempts (thousands)}
+      ]
+        \addplot[fill=bpfBlue!75, draw=bpfBlue!75] coordinates {(Fuzzed bytecode,9.983)};
+        \addplot[fill=bpfOrange!80, draw=bpfOrange!80] coordinates {(Fuzzed bytecode,0.017)};
+    \end{groupplot}
+  \end{tikzpicture}
+  \caption{Fail-safe rejection results. Panel~(a) groups targeted adversarial rewrites by category and shows that all submitted invalid candidates are rejected. Panel~(b) summarizes the randomized stress test, where 9983 of 10000 mutated candidates are rejected and the remaining 17 still remain verifier-acceptable.}
+  \label{fig:rq4-failsafe}
+\end{figure}

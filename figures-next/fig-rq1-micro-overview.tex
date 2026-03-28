@@ -1,7 +1,105 @@
 % Synthetic placeholder figure generated from experiment/sec-5-rq1-native-code/data/microbench.csv
 \begin{figure*}[t]
   \centering
-  \includegraphics[width=\linewidth]{figures-next/rq1-micro-overview.pdf}
+  \begin{tikzpicture}
+    \begin{groupplot}[
+      group style={group size=2 by 1, horizontal sep=1.5cm},
+      bpfplot,
+      width=0.44\textwidth,
+      height=0.52\textwidth,
+      xbar,
+      ytick=data,
+      y dir=reverse,
+      symbolic y coords={
+        load\_byte\_recompose,
+        stride\_load\_16,
+        ipv4\_parse,
+        rotate64\_hash,
+        pkt\_rss\_hash,
+        flow\_hash\_mix,
+        switch\_dispatch,
+        binary\_search,
+        bounds\_ladder,
+        extract\_u32,
+        extract\_u64,
+        be32\_load
+      },
+      enlarge y limits=0.04,
+      legend columns=2,
+      legend style={at={(0.5,1.10)}, anchor=south}
+    ]
+      \nextgroupplot[
+        title={(a) Microbenchmark execution},
+        xmin=0.9,
+        xmax=1.45,
+        xlabel={Execution speedup over stock}
+      ]
+        \addplot[fill=bpfBlue!75, draw=bpfBlue!75] coordinates {
+          (1.3103,load\_byte\_recompose)
+          (1.2394,stride\_load\_16)
+          (1.1803,ipv4\_parse)
+          (1.2006,rotate64\_hash)
+          (1.1193,pkt\_rss\_hash)
+          (1.0894,flow\_hash\_mix)
+          (1.1606,switch\_dispatch)
+          (1.1005,binary\_search)
+          (0.9501,bounds\_ladder)
+          (1.0797,extract\_u32)
+          (1.1098,extract\_u64)
+          (1.0695,be32\_load)
+        };
+        \addplot[fill=bpfOrange!80, draw=bpfOrange!80] coordinates {
+          (1.4200,load\_byte\_recompose)
+          (1.3293,stride\_load\_16)
+          (1.2702,ipv4\_parse)
+          (1.2893,rotate64\_hash)
+          (1.2398,pkt\_rss\_hash)
+          (1.1695,flow\_hash\_mix)
+          (1.1909,switch\_dispatch)
+          (1.1201,binary\_search)
+          (0.9799,bounds\_ladder)
+          (1.1306,extract\_u32)
+          (1.1607,extract\_u64)
+          (1.1494,be32\_load)
+        };
+        \legend{BpfReJIT,LLVM upper bound}
+
+      \nextgroupplot[
+        title={(b) Native code size},
+        xmin=0,
+        xmax=32,
+        xlabel={JIT image reduction (\%)}
+      ]
+        \addplot[fill=bpfBlue!75, draw=bpfBlue!75] coordinates {
+          (22.03,load\_byte\_recompose)
+          (17.79,stride\_load\_16)
+          (16.13,ipv4\_parse)
+          (15.10,rotate64\_hash)
+          (10.80,pkt\_rss\_hash)
+          (9.04,flow\_hash\_mix)
+          (5.92,switch\_dispatch)
+          (4.17,binary\_search)
+          (2.98,bounds\_ladder)
+          (10.20,extract\_u32)
+          (12.15,extract\_u64)
+          (8.82,be32\_load)
+        };
+        \addplot[fill=bpfOrange!80, draw=bpfOrange!80] coordinates {
+          (30.93,load\_byte\_recompose)
+          (25.96,stride\_load\_16)
+          (22.18,ipv4\_parse)
+          (20.83,rotate64\_hash)
+          (18.18,pkt\_rss\_hash)
+          (13.83,flow\_hash\_mix)
+          (7.89,switch\_dispatch)
+          (4.86,binary\_search)
+          (4.17,bounds\_ladder)
+          (13.78,extract\_u32)
+          (15.89,extract\_u64)
+          (12.94,be32\_load)
+        };
+    \end{groupplot}
+  \end{tikzpicture}
   \caption{Supported-family microbenchmarks. Across these synthetic placeholder results, \tool achieves a geometric-mean 1.13x speedup over the stock kernel JIT together with a median 10.5\% JIT-image reduction. LLVM remains a stronger upper bound, but \tool closes most of the visible gap on wide-memory and rotate-heavy programs. \note{rq-1-exp-1}}
   \label{fig:rq1-micro-overview}
 \end{figure*}

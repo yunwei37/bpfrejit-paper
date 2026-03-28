@@ -18,7 +18,7 @@ For each experiment, should reuse the current repo harnesses whenever possible r
   - `make vm-micro`, `micro/driver.py`
   - `make vm-corpus`, `corpus/driver.py`
   - `make vm-e2e`, `e2e/run.py`
-  - `bpfrejit-daemon` CLI modes: `enumerate`, `rewrite`, `apply`, `apply-all`, `watch`, `serve`, `profile`
+  - `bpfrejit-daemon serve` plus its Unix socket JSON protocol
 - Use paired comparisons on the same machine / VM / kernel image.
 - Baselines must be consistent:
   - **stock** = kernel eBPF JIT without REJIT
@@ -226,19 +226,19 @@ RQ3 measures the cost of using BPFreJIT online on live programs.
 This is about the price of applying REJIT, not the benefit it produces.
 
 ## Current repo coverage
-- **Already available:** daemon one-shot modes, `serve` mode, `watch` mode, `profile` mode, and live integration tests.
+- **Already available:** `serve` mode, its JSON optimize protocol, and live integration tests.
 - **Needs adjustment:** no paper-grade overhead figure exists yet.
 - **Missing:** stage-level timing and steady-state daemon-overhead measurements.
 
 ## Experiment 3.1 — One-shot vs persistent server latency
 - **Status:** Missing
-- **Goal:** Quantify the overhead saved by running the daemon persistently (`serve`) instead of starting a fresh process for each optimize/apply request.
-- **Compare with:** one-shot `apply` CLI vs `serve` socket API.
+- **Goal:** Quantify the overhead saved by keeping the daemon alive in `serve` mode instead of starting a fresh daemon process per optimize request.
+- **Compare with:** per-request daemon startup + socket optimize vs long-lived `serve` socket API.
 - **Setup:**
   - Use a live program with known sites, such as the integration-test program (`load_byte_recompose.bpf.o`) and optionally one larger real program.
   - Measure end-to-end wall-clock latency for repeated single-program optimizations using:
-    - `bpfrejit-daemon apply <prog_id>`
-    - `bpfrejit-daemon serve` + JSON `{"cmd": "optimize", "prog_id": ...}`
+    - start `bpfrejit-daemon serve`, issue one `{"cmd": "optimize", "prog_id": ...}` request, then tear it down
+    - reuse one long-lived `bpfrejit-daemon serve` instance for repeated `optimize` requests
   - Use at least 30 repetitions per mode.
 - **Criteria:**
   - Total latency per optimize/apply request (`ms`)
@@ -255,8 +255,8 @@ This is about the price of applying REJIT, not the benefit it produces.
 - **Goal:** Identify where online REJIT time is spent.
 - **Compare with:** not a baseline comparison; this is a breakdown experiment.
 - **Setup:**
-  - Instrument the daemon and syscall path so that one optimize/apply operation is split into stages:
-    - enumerate / discover (if included)
+  - Instrument the daemon and syscall path so that one optimize request is split into stages:
+    - live-program discovery / fetch
     - get original program
     - analysis
     - rewrite
@@ -277,14 +277,13 @@ This is about the price of applying REJIT, not the benefit it produces.
 ## Experiment 3.3 — Steady-state daemon overhead
 - **Status:** Missing
 - **Goal:** Measure the background cost of leaving BPFreJIT enabled on a live system.
-- **Compare with:** daemon off, `watch` only, `profile` only, full adaptive mode.
+- **Compare with:** daemon off, idle `serve`, and active `serve` handling optimize requests.
 - **Setup:**
   - Pick one stable long-running workload (Tracee or Katran are both acceptable once stabilized).
-  - Run four modes:
+  - Run three modes:
     1. no daemon,
-    2. daemon `watch` only,
-    3. daemon `profile` only,
-    4. full online optimization mode.
+    2. idle daemon `serve`,
+    3. daemon `serve` with periodic optimize requests.
   - Use identical workload duration for all modes.
 - **Criteria:**
   - Daemon CPU usage
@@ -294,8 +293,8 @@ This is about the price of applying REJIT, not the benefit it produces.
   - Table: CPU, memory, app delta
   - Figure: grouped bar chart
 - **Expected results:**
-  - `watch` and `profile` should be near-negligible.
-  - Full mode can cost more, but should remain much smaller than the application-level gain on the cases where REJIT helps.
+  - Idle `serve` should be near-negligible.
+  - Active optimize traffic can cost more, but should remain much smaller than the application-level gain on the cases where REJIT helps.
 
 ---
 
@@ -338,16 +337,16 @@ RQ4 must clearly separate two claims:
 ## Experiment 4.2 — Normal live-path safety and continuity
 - **Status:** Existing, needs extension
 - **Goal:** Show that the normal live rewrite/apply path is stable and does not produce kernel warnings or break the running program.
-- **Compare with:** before vs after normal live apply/apply-all.
+- **Compare with:** before vs after normal live optimize requests through `serve`.
 - **Setup:**
   - Start from the existing integration test `tests/integration/vm_daemon_live.sh`.
   - Keep the current checks:
-    - daemon `enumerate`
-    - daemon `rewrite`
-    - daemon `apply`
-    - daemon `apply-all`
+    - daemon `serve` startup
+    - daemon `status`
+    - daemon `optimize` dry run
+    - daemon `optimize` with explicit pass override
     - `dmesg` scan for `WARNING|BUG|Oops`
-  - Extend the test to record whether the target program remains attached and runnable after `apply`.
+  - Extend the test to record whether the target program remains attached and reachable during the `serve` session.
 - **Criteria:**
   - Success/failure of each daemon stage
   - Presence of kernel warnings

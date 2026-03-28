@@ -69,12 +69,7 @@ Kinsn is a dedicated instruction form in eBPF bytecode. A program may therefore 
 
 % [addressed] \note{hao: We have a mismatch here. The text says sidecar, but the figure uses 'binding'.}
 
-\begin{figure*}[htbp]
-  \centering
-  \includegraphics[width=0.8\linewidth]{figures/sec-3-flow.pdf}
-    \caption{BPF Optimization Pipeline utilizing specialized Kernel Instructions (Kinsns).}
-    \label{fig:kinsns-opt}
-\end{figure*}
+\input{figures/sec-3-flow}
 
 Each kinsn is represented by two parts: a \emph{target} and a \emph{sidecar} payload. The target identifies the instruction family, such as \texttt{rotate64}, \texttt{select64}, \texttt{extract64}, or an endian-aware load. The sidecar binds that abstract operation to a concrete program point by encoding the relevant registers, immediate fields, and mode bits. Figure~\ref{fig:select64-kinsn} uses \texttt{select64} as a running example. In ordinary eBPF, the operation appears as a small branch diamond. In kinsn form, the same operation appears as one instruction kinsn whose target names the operation and whose sidecar carries the destination register, the condition input, and the candidate values. This split is important because it preserves the semantic structure that later lowering wants to realize directly, instead of forcing the JIT to recover that structure from already flattened ordinary-BPF code.
 

@@ -1,7 +1,51 @@
 % Synthetic placeholder figure generated from experiment/sec-3-kernel-path/data/security_survey.csv
 \begin{figure}[t]
   \centering
-  \includegraphics[width=\linewidth]{figures-next/motivation-security.pdf}
+  \begin{tikzpicture}
+    \begin{groupplot}[
+      group style={group size=1 by 2, vertical sep=1.0cm},
+      bpfplot,
+      width=\linewidth,
+      height=0.42\linewidth
+    ]
+      \nextgroupplot[
+        title={(a) Public bug volume vs CVE-tagged subset},
+        ymode=log,
+        ymin=1,
+        ymax=4000,
+        ybar,
+        bar width=10pt,
+        symbolic x coords={LLVM,Kernel},
+        xtick=data,
+        xticklabels={LLVM,{Kernel verifier/JIT}},
+        ylabel={Count (log scale)},
+        legend columns=2,
+        legend style={at={(0.5,1.18)}, anchor=south}
+      ]
+        \addplot[fill=bpfBlue!70, draw=bpfBlue!70] coordinates {(LLVM,2800) (Kernel,14)};
+        \addplot[fill=bpfOrange!80, draw=bpfOrange!80] coordinates {(LLVM,4) (Kernel,11)};
+        \legend{Public bugs,CVE-tagged}
+
+      \nextgroupplot[
+        title={(b) Annual public bug-report trend},
+        ymode=log,
+        ymin=1,
+        ymax=1000,
+        xlabel={Year},
+        ylabel={Public bugs per year (log scale)},
+        xtick={16,17,18,19,20,21,22,23,24,25}
+      ]
+        \addplot[bpfBlue, thick, mark=*] coordinates {
+          (16,130) (17,170) (18,210) (19,240) (20,260)
+          (21,280) (22,300) (23,350) (24,380) (25,480)
+        };
+        \addplot[bpfRed, thick, mark=square*] coordinates {
+          (16,1) (17,1) (18,1) (19,1) (20,2)
+          (21,2) (22,1) (23,2) (24,1) (25,2)
+        };
+        \legend{LLVM public bugs,Kernel verifier/JIT public bugs}
+    \end{groupplot}
+  \end{tikzpicture}
   \caption{Illustrative synthetic disclosure survey for the past decade. Panel (a) compares cumulative public bugs with the CVE-tagged subset: a large userspace compiler stack can accumulate thousands of ordinary bugs while only a tiny fraction are security-labeled, whereas a much smaller verifier/JIT bug population is far more likely to be treated as a security issue because it lies on the privileged kernel admission path. Panel (b) shows the corresponding annual report trend and emphasizes that the kernel-side population stays small but persistently security-sensitive. Example LLVM CVEs include CVE-2024-0151 and CVE-2024-7883; representative verifier/JIT issues include CVE-2017-16995, CVE-2020-8835, CVE-2021-29154, CVE-2021-31440, and CVE-2021-3490.}
   \label{fig:motivation-security}
 \end{figure}

@@ -1,7 +1,58 @@
 % Synthetic placeholder figure generated from experiment/sec-5-rq1-native-code/data/corpus_coverage.csv
 \begin{figure}[t]
   \centering
-  \includegraphics[width=\linewidth]{figures-next/rq1-corpus-coverage.pdf}
+  \begin{tikzpicture}
+    \begin{groupplot}[
+      group style={group size=1 by 2, vertical sep=1.0cm},
+      bpfplot,
+      width=\linewidth,
+      height=0.46\linewidth,
+      ytick=data,
+      y dir=reverse,
+      symbolic y coords={Networking,Tracing,Security,Platform,Selftests},
+      enlarge y limits=0.15
+    ]
+      \nextgroupplot[
+        title={(a) Rewrite-site coverage},
+        xbar stacked,
+        xmin=0,
+        xmax=420,
+        xlabel={Eligible rewrite sites},
+        legend columns=2,
+        legend style={at={(0.5,1.16)}, anchor=south}
+      ]
+        \addplot[fill=bpfBlue!75, draw=bpfBlue!75] coordinates {(150,Networking) (70,Tracing) (52,Security) (28,Platform) (14,Selftests)};
+        \addplot[fill=bpfTeal!75, draw=bpfTeal!75] coordinates {(110,Networking) (58,Tracing) (41,Security) (24,Platform) (16,Selftests)};
+        \addplot[fill=bpfOrange!80, draw=bpfOrange!80] coordinates {(80,Networking) (72,Tracing) (49,Security) (31,Platform) (20,Selftests)};
+        \addplot[fill=bpfGreen!75, draw=bpfGreen!75] coordinates {(48,Networking) (35,Tracing) (28,Security) (19,Platform) (12,Selftests)};
+        \legend{Wide memory,Rotate,Cond.\ select,Extract/endian}
+        \node[font=\scriptsize, anchor=west] at (axis cs:392,Networking) {26/44 prog.};
+        \node[font=\scriptsize, anchor=west] at (axis cs:260,Tracing) {23/39 prog.};
+        \node[font=\scriptsize, anchor=west] at (axis cs:187,Security) {15/28 prog.};
+        \node[font=\scriptsize, anchor=west] at (axis cs:115,Platform) {9/22 prog.};
+        \node[font=\scriptsize, anchor=west] at (axis cs:73,Selftests) {5/19 prog.};
+
+      \nextgroupplot[
+        title={(b) Median size reduction},
+        xbar,
+        xmin=0,
+        xmax=11,
+        xlabel={Median JIT image reduction (\%)}
+      ]
+        \addplot[fill=bpfBlue!75, draw=bpfBlue!75] coordinates {
+          (9.5,Networking)
+          (7.2,Tracing)
+          (7.6,Security)
+          (5.1,Platform)
+          (4.4,Selftests)
+        };
+        \node[font=\scriptsize, anchor=west] at (axis cs:9.65,Networking) {n=8};
+        \node[font=\scriptsize, anchor=west] at (axis cs:7.35,Tracing) {n=5};
+        \node[font=\scriptsize, anchor=west] at (axis cs:7.75,Security) {n=4};
+        \node[font=\scriptsize, anchor=west] at (axis cs:5.25,Platform) {n=1};
+        \node[font=\scriptsize, anchor=west] at (axis cs:4.55,Selftests) {n=2};
+    \end{groupplot}
+  \end{tikzpicture}
   \caption{Corpus coverage and code-size benefit. The upper panel groups eligible rewrite sites by subsystem and transform family, with each row annotated by eligible-program coverage; the lower panel shows the median JIT-image reduction among eligible programs in each subsystem. In this synthetic placeholder snapshot, rewrite opportunities appear in 78 of 152 programs, and the eligible subset has a median JIT-image reduction of 6.8\%. \note{rq-1-exp-3}}
   \label{fig:rq1-corpus-coverage}
 \end{figure}

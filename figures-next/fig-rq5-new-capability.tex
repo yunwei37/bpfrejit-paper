@@ -1,7 +1,45 @@
 % Synthetic placeholder figure generated from experiment/sec-5-rq5-extensibility/data/new_capability_eval.csv
 \begin{figure}[t]
   \centering
-  \includegraphics[width=\linewidth]{figures-next/rq5-new-capability.pdf}
+  \begin{tikzpicture}
+    \begin{groupplot}[
+      group style={group size=2 by 1, horizontal sep=1.2cm},
+      bpfplot,
+      width=0.45\linewidth,
+      height=0.62\linewidth,
+      xbar,
+      ytick=data,
+      y dir=reverse,
+      symbolic y coords={ipv4 parse,Katran parser,Tracee event,Cilium svc key},
+      enlarge y limits=0.18
+    ]
+      \nextgroupplot[
+        title={(a) Speedup},
+        xmin=1.0,
+        xmax=1.20,
+        xlabel={Execution speedup over stock}
+      ]
+        \addplot[fill=bpfBlue!75, draw=bpfBlue!75] coordinates {
+          (1.17,ipv4 parse)
+          (1.10,Katran parser)
+          (1.07,Tracee event)
+          (1.04,Cilium svc key)
+        };
+
+      \nextgroupplot[
+        title={(b) Code shrink},
+        xmin=0,
+        xmax=12,
+        xlabel={Code-size reduction (\%)}
+      ]
+        \addplot[fill=bpfOrange!80, draw=bpfOrange!80] coordinates {
+          (11.2,ipv4 parse)
+          (8.6,Katran parser)
+          (5.1,Tracee event)
+          (3.7,Cilium svc key)
+        };
+    \end{groupplot}
+  \end{tikzpicture}
   \caption{Benefit of one newly added capability. In this synthetic placeholder example, the new endian-fusion family yields a clear win on its dedicated microbenchmark and smaller but still visible gains on real programs. \note{rq-5-exp-2}}
   \label{fig:rq5-new-capability}
 \end{figure}
