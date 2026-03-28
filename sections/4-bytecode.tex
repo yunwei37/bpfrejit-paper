@@ -5,7 +5,7 @@
 % opening sentence
 % ref to each subsection
 
-%%% subsection 3.1 <Representation of Kinsn>
+%%% subsection 4.1 <Hardware Specialization via Kinsn-based Bytecode Transformations>
 
 %%%
 % message<kinsn is a dedicated instruction form in eBPF bytecode>
@@ -22,8 +22,6 @@
 % sidecar carries regs, immediates, mode bits
 % concrete running example: select64
 % why target + sidecar better than later JIT pattern recovery
-
-%%% subsection<Kinsn Semantics in Verification and Execution>
 
 %%%
 % message<each kinsn has one canonical semantics shared by verifier and JIT>
@@ -46,11 +44,17 @@
 % rewrite to the same instantiated ordinary-BPF sequence when native emit is unavailable
 % native lowering must preserve the canonical kinsn semantics
 
+%%% subsection 4.2 <Runtime Specialization via Deployment-time Bytecode Transformations>
+
+%%%
+% message<xx>
+% xx
+
 %%%%%%%%%%%%Outline%%%%%%%%%%%%%%%%%%
 
 
-\section{Kinsn: Extending eBPF Bytecode}
-\label{sec:kinsn}
+\section{Bytecode-Level Optimization}
+\label{sec:bytecode}
 
 This section introduces \emph{kinsn}, a bytecode abstraction that separates the representation used to preserve optimization intent from the ordinary-eBPF form used for kernel verification. A kinsn keeps operations such as \texttt{rotate64}, \texttt{select64}, and \texttt{extract64} explicit in the bytecode, instead of forcing the compiler to flatten them early into ordinary-eBPF idioms. For verification, each kinsn is expanded into a semantics-equivalent ordinary-eBPF sequence and checked by the kernel's existing verifier. For execution, the original kinsn is lowered directly to target code while its higher-level semantics remain explicit. This separation keeps sophisticated optimization in userspace, preserves the current kernel verification interface, and avoids pushing target-specific recovery logic into the in-kernel JIT.
 

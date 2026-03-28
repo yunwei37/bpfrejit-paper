@@ -1,14 +1,10 @@
 %%%%%%%%%%%%Outline%%%%%%%%%%%%%%%%%%
 
-% Section 4 overview
+% Section 4: \tool Design and Implementation
 
 %%%
-% message<overview of the post-load recompilation loop>
-% follow the architecture workflow figure
-% kernel keeps the ordinary fast path running and saves original bytecode at load time
-% daemon reads a live program, rewrites a whole-program candidate using deployment facts, and sends it back
-% kernel re-verifies, re-JITs, and replaces the native image in place for the same logical program
-% userspace decides which candidate to try; kernel decides whether it is legal and safe
+% message<overview of the section>
+% xx
 
 % Section 4.1: Design Principles
 
@@ -24,7 +20,7 @@
 % replace code in place for the same logical program
 % after installation, execution still follows the ordinary JIT fast path
 
-% Section 4.2: Challenges and Insights
+% Section 4.2: Design Challenges and Insights
 
 %%%
 % message<challenge: a live program has no stable rewrite baseline>
@@ -38,33 +34,32 @@
 % insight: use kinsn as the shared contract for validation and lowering
 % build replacement off the fast path and publish it atomically in place
 
-% Section 4.3: Choosing and Revisiting Whole-Program Rewrites
+% Section 4.3: Implementation (introduce by components)
 
 %%%
-% message<choosing rewrites is a userspace policy decision>
-% profitable rewrites depend on workload, machine, deployment state, and execution phase
-% these choices should not be frozen into a fixed in-kernel policy
-% the daemon decides whether to revisit a live program and which candidate to try
-% the kernel remains the final authority on legality and safety
+% message<architecture overview of \tool>
+% follow the architecture workflow figure
+% kernel keeps the ordinary fast path running and saves original bytecode at load time
+% daemon reads a live program, rewrites a whole-program candidate using deployment facts, and sends it back
+% kernel re-verifies, re-JITs, and replaces the native image in place for the same logical program
+% userspace decides which candidate to try; kernel decides whether it is legal and safe
 
 %%%
-% message<the daemon submits one whole-program candidate rather than incremental patches>
-% multiple rewrites interact and should be composed before kernel admission
-% normalization, kinsn-introducing rewrites, and runtime specialization are combined in userspace
-% the kernel makes one accept-or-reject decision over the composed result
-% this keeps the recompilation interface stable as new rewrites are added
+% message<userspace daemon>
+% xxx
 
 %%%
-% message<recompilation is repeatable because each round restarts from the same baseline>
-% runtime facts may change after deployment and justify another recompilation round
-% each round starts from saved original bytecode rather than from an already rewritten image
-% rejection leaves the current live program unchanged
-% repeated recompilation reuses the same trusted kernel admission path
+% message<kernel re-verification and re-JIT>
+% xx
+
+%%%
+% message<safe publication>
+% xx
 
 %%%%%%%%%%%%Outline%%%%%%%%%%%%%%%%%%
 
-\section{\tool Design}
-\label{sec:rejit}
+\section{\tool Design and Implementation}
+\label{sec:bpfrejit}
 
 % [addressed] \note{Yusheng: rename section to \tool(bpfrejit) Design? You can frist say the design goal/princile 1, then say the challenge and our key insight again 2, then Merge Overall Workflow and Deplyment mode into one subsection as 3; }
 

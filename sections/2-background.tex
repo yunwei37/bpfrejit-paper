@@ -1,0 +1,44 @@
+%%%%%%%%%%%% Outline %%%%%%%%%%%%%%%%%%
+
+% Section 2: Background
+
+
+
+
+
+
+% Section 2.1: eBPF Execution Pipeline
+
+%%%
+% message<eBPF background needed for the motivation>
+% userspace compiles BPF C to ordinary eBPF bytecode
+% the program is loaded through BPF_PROG_LOAD
+% the verifier checks safety on ordinary eBPF at load time
+% accepted bytecode is JIT-compiled to native code at load time
+% the resulting native code executes later when the hook fires
+% Figure 1 should emphasize the load-time / runtime split and omit unrelated kernel details
+
+% Section 2.2: Existing Optimization Approaches for eBPF
+
+% Section 2.3: Modern Compilation Framework
+
+
+%%%%%%%%%%%% Outline %%%%%%%%%%%%%%%%%%
+
+\section{Background}
+\label{sec:background}
+
+This section introduces the standard eBPF execution pipeline (§\ref{subsec:ebpf-jit}) and a concrete example that motivates the need for a richer bytecode ISA (§\ref{subsec:example}).
+
+\subsection{eBPF JIT}
+\label{subsec:ebpf-jit}
+
+% [addressed] \note{Yusheng: You can describe all the traditional eBPF deployment model here, like how user write code and userspace applicatio, how it's bytecode load into kernel, get verified and JITed.}
+
+Figure~\ref{fig:ebpf} shows the standard eBPF execution path. In the standard deployment path, developers write a BPF program in C, compile it in userspace with Clang/LLVM into an object file containing ordinary eBPF bytecode, and load that bytecode through the \texttt{bpf(BPF\_PROG\_LOAD)} syscall. Before the program executes in kernel context, the verifier perform various safety checks on the submitted bytecode, such as control-flow validity and memory safety~\cite{linuxkernel_bpf_verifier}. After verification, the kernel performs JIT compilation, which lowers accepted eBPF bytecode to native machine code before execution~\cite{ebpf_jit}. The compiled program is then attached to the hook defined by its program metadata. Programs are invoked at runtime by kernel events such as packet arrival. Unlike mature runtimes that employ tiered recompilation and profile-guided optimization~\cite{jvm_hotspot,v8_turbofan,llvm}, the eBPF kernel JIT performs a single, one-shot translation at load time with no subsequent recompilation, runtime feedback, or optimization passes.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.6\linewidth]{figures/sec-2-ebpf.pdf}
+  \caption{eBPF execution pipeline. C source is compiled to BPF bytecode, verified and JIT-compiled at load time, then executed as native x86 code at runtime via kernel hooks.}
+  \label{fig:ebpf}\end{figure}
