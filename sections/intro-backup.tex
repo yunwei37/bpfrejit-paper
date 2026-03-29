@@ -1,0 +1,562 @@
+
+%%%%%%%%%%%%% KEY INSIGHT — canonical phrasing %%%%%%%%%%%%%
+%
+% Fact: The BPF verifier is a one-time load-time safety gate.
+% Default assumption: verify once → JIT → done.
+%
+% Our insight: repurpose the verifier as a REUSABLE safety gate for
+% post-deployment optimization — submit complete rewritten bytecode
+% through the SAME verification path (not native patches, not a new
+% validator), so that arbitrarily complex optimizations can be deployed
+% as untrusted userspace components without new safety infrastructure.
+%
+% Phrasing v1 (constraint → enabler):
+%   "The BPF verifier, conventionally seen as a constraint on optimization,
+%    is in fact the key enabler of an extensible compilation framework:
+%    because it independently re-verifies any rewritten bytecode with the
+%    same guarantees as the original load, new optimization strategies can
+%    be deployed as untrusted userspace components without modifying the
+%    verifier or the kernel JIT."
+%
+% Phrasing v2 (design decision):
+%   "We repurpose the load-time verifier as a reusable safety gate for
+%    post-deployment optimization: by submitting complete rewritten bytecode
+%    through the same verification path, arbitrarily complex optimizations
+%    can be deployed as untrusted userspace components without new safety
+%    infrastructure or kernel changes."
+%
+% Contrast:
+%   livepatch — patches native code, must trust patch author (no re-verify)
+%   K2/Merlin — optimize before load, not post-deployment
+%   BCF — new certificate-based validator
+%   BPFreJIT — re-submit complete bytecode through EXISTING verifier
+%
+%%%%%%%%%%%%% END KEY INSIGHT v1 (repurpose verifier) %%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%% KEY INSIGHT v2 — offload at bytecode level %%%%%%%%%%%%%
+%
+% Logic chain:
+%
+%   Problem:  eBPF JIT is under-optimized (40% gap vs LLVM backend)
+%       ↓
+%   Why:      JIT is intentionally simple for safety (1-to-1 translation,
+%             formally verifiable). Bytecode ISA designed for verifiability,
+%             not optimization.
+%       ↓
+%   Existing exits, all blocked:
+%     ❌ In-kernel optimization → tens of thousands LOC, breaks simplicity
+%     ❌ Pre-load optimization (K2/Merlin) → no runtime info, not transparent
+%     ❌ Static peepholes → 68% regress; optimization profitability is
+%        context-dependent (deployment problem, not compiler problem)
+%       ↓
+%   Only unblocked path: post-deployment optimization FROM userspace
+%       ↓
+%   But: how can untrusted userspace safely modify kernel code?
+%       ↓
+%   KEY DESIGN: operate at the BYTECODE level, not native code level.
+%   Bytecode is the right interface because it is simultaneously:
+%     (a) Rich enough for sophisticated analysis and rewriting
+%         (map inlining, const prop, DCE, kinsn insertion — all bytecode ops)
+%     (b) Simple enough for the kernel's existing verifier to re-check safety
+%     (c) Available post-deployment (original bytecode preserved at load time)
+%       ↓
+%   Contrast — why bytecode level is the critical distinction:
+%     livepatch:  post-deploy + userspace, but NATIVE CODE → can't re-verify
+%                 → must trust the patcher → not extensible
+%     K2/Merlin:  userspace + BYTECODE, but PRE-LOAD → no runtime info
+%                 → not transparent → not post-deployment
+%     ePass:      BYTECODE + at-load, but IN-KERNEL → limited by kernel
+%                 complexity budget
+%     BPFreJIT:   userspace + BYTECODE + POST-DEPLOY + RE-VERIFY
+%                 → unique design point: untrusted, extensible, safe
+%       ↓
+%   Consequences:
+%     - Optimization logic lives entirely in userspace (daemon), untrusted
+%     - Kernel provides only minimal mechanism: REJIT syscall (~600 LOC)
+%     - kinsn extends bytecode vocabulary via kernel modules (no verifier changes)
+%     - Safety guaranteed by existing verifier; fail-safe on rejection
+%     - New optimizations = new daemon pass + optional kinsn module, zero kernel changes
+%
+% One-sentence insight:
+%   "Post-deployment optimization of kernel extensions can be safely offloaded
+%    to userspace by operating at the bytecode level: bytecode is rich enough
+%    for sophisticated rewriting (map inlining, hardware specialization via kinsn),
+%    yet simple enough for the kernel's existing verifier to re-check safety —
+%    making bytecode the right interface for separating optimization policy
+%    (userspace) from safety mechanism (kernel)."
+%
+% Why this is non-obvious:
+%   - Kernel community's instinct: optimize IN the kernel (JIT peepholes)
+%   - Compiler community's instinct: optimize BEFORE load (K2/Merlin)
+%   - Security community's instinct: post-deploy kernel code modification
+%     requires high trust (livepatch model)
+%   - Our realization: bytecode-level rewriting + existing re-verification
+%     sidesteps all three defaults
+%
+% Why this is NOT "apply A to B":
+%   - JVM/V8 optimization happens inside the trusted runtime (bug → crash)
+%   - BPFreJIT optimization happens OUTSIDE the trust boundary (bug → verifier
+%     rejects or wrong behavior, but kernel safe)
+%   - The bytecode + mandatory verifier combination enables a trust model
+%     that no userspace runtime has
+%
+% What the verifier's role is (enabling property, NOT the insight):
+%   - The verifier is stateless and accepts any valid bytecode regardless
+%     of provenance — this is a FACT, not our contribution
+%   - Our contribution is the DESIGN that exploits this fact: offload at
+%     bytecode level, re-submit through existing path, keep optimizer untrusted
+%
+%%%%%%%%%%%%% END KEY INSIGHT v2 %%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%% KEY INSIGHT v3 — offload at bytecode level (post-reviewer) %%%%%%%%%%%%%
+%
+% === LOGIC CHAIN ===
+%
+% Step 1 — Problem:
+%   eBPF JIT is under-optimized (40% exec gap, 50% code-size gap vs LLVM backend).
+%   Native code quality on hot paths directly affects end-to-end efficiency.
+%
+% Step 2 — Root cause (design choice, not bug):
+%   The JIT is INTENTIONALLY simple for safety. Bytecode ISA designed for
+%   verifiability, not optimization. JIT does 1-to-1 translation, formally
+%   verifiable (Jitterbug). Simplicity is the price of safety.
+%
+% Step 3 — Existing exits, all insufficient:
+%   ❌ In-kernel optimization → tens of thousands LOC safety-critical code,
+%      breaks JIT simplicity, hard to audit/upstream
+%   ❌ Pre-load optimization (K2/Merlin/EPSO) → no runtime info, not
+%      transparent, not post-deployment
+%   ❌ Static peepholes → 68% of legal rewrites regress real programs
+%
+% Step 4 — 68% regression: deeper meaning (KEY LOGICAL STEP):
+%   68% doesn't just say "static is bad." It proves:
+%     "Optimization profitability is a DEPLOYMENT property, not a program property."
+%   Same CMOV lowering: +19% isolated, -67% corpus. Same .bpf.o, different
+%   workloads → sign flip. Cause: branch prediction, I-cache, memory patterns
+%   vary by deployment context.
+%
+%   Therefore the optimizer MUST:
+%     (a) Access runtime information     → must be post-deployment
+%     (b) Adapt to deployment context    → must have policy decisions
+%     (c) Iterate without kernel release → must be in userspace
+%
+% Step 5 — The question:
+%   Post-deployment optimization from userspace. But: how can untrusted
+%   userspace safely modify kernel-resident code?
+%
+% Step 6 — KEY INSIGHT: bytecode is the right interface:
+%   Operate at the BYTECODE level, not native code. Bytecode is simultaneously:
+%     (a) Rich enough for sophisticated rewriting — map inlining, const prop,
+%         DCE, kinsn insertion are all bytecode-to-bytecode transformations
+%     (b) Constrained enough for the kernel's existing verifier to re-check
+%         safety — same guarantees as first load, no new safety infrastructure
+%     (c) Available post-deployment — original bytecode preserved at load time
+%   This makes bytecode the unique interface that is optimizable + verifiable +
+%   post-deployment accessible.
+%
+% Step 7 — Why bytecode level is the critical distinction (design space):
+%
+%   System         | Where     | Level     | When        | Re-verify? | Trust
+%   ---------------+-----------+-----------+-------------+------------+--------
+%   Kernel JIT     | kernel    | native    | load        | n/a        | trusted
+%   K2/Merlin      | userspace | bytecode  | pre-load    | at load    | trusted
+%   livepatch      | userspace | NATIVE    | post-deploy | CANNOT     | MUST trust
+%   ePass          | kernel    | bytecode  | at-load     | in-kernel  | trusted
+%   BPFreJIT       | userspace | BYTECODE  | POST-DEPLOY | CAN        | UNTRUSTED
+%
+%   livepatch = post-deploy + userspace, but NATIVE CODE → can't re-verify
+%   → must trust patcher. K2 = bytecode + userspace, but PRE-LOAD → no
+%   runtime info. BPFreJIT occupies a unique design point: untrusted,
+%   extensible, safe, post-deployment.
+%
+% Step 8 — Consequences (entire system follows from insight):
+%   - REJIT syscall (~600 LOC): kernel mechanism — accept bytecode, re-verify,
+%     re-JIT, atomic swap
+%   - kinsn (kernel modules): extend bytecode vocabulary — BPF expansion for
+%     verifier + native lowering for JIT. New kinsn = new module, zero
+%     verifier changes
+%   - Daemon (userspace Rust): all optimization policy — 15 passes, profiling,
+%     analysis, rewrite, profitability. Untrusted; bugs → verifier rejects
+%     (fail-safe) or wrong behavior (kernel still safe)
+%
+% Step 9 — Evidence (design validated):
+%   Static always-apply:  geomean 1.121x regression (68% programs worse)
+%   Selective policy:     geomean 1.018x (most damage recovered)
+%   Oracle:               geomean 0.849x (15% improvement)
+%   Trajectory: regression → neutral → speedup proves deployment-adaptive
+%   policy is the correct design.
+%
+% === ONE-SENTENCE INSIGHT ===
+%
+%   "Post-deployment optimization of kernel eBPF programs can be safely
+%    offloaded to an untrusted userspace daemon by operating at the bytecode
+%    level: bytecode is rich enough for sophisticated rewriting, yet
+%    constrained enough for the kernel's existing verifier to re-establish
+%    safety, enabling optimization that adapts to deployment context
+%    without kernel trust in the optimizer."
+%
+% === ANTICIPATED ATTACKS AND DEFENSES ===
+%
+% Attack: "The verifier already accepts any valid bytecode. Calling it again
+%   is not an insight."
+% Defense: The insight is not re-verification itself (that's an enabling
+%   property). The insight is that bytecode is the right INTERFACE for
+%   offloading — simultaneously optimizable, verifiable, and post-deployment
+%   accessible. Despite this being possible since BPF's inception, no prior
+%   system exploited it: K2/Merlin chose pre-load, livepatch chose native
+%   code, ePass chose in-kernel. The design space was available but unexplored.
+%
+% Attack: "This is just 'apply JVM PGO to eBPF' — apply A to B."
+% Defense: JVM/V8 optimizer is inside the trusted runtime (bug → crash).
+%   BPFreJIT optimizer is OUTSIDE the trust boundary (bug → verifier rejects
+%   or wrong behavior, kernel safe). No userspace runtime has this trust model.
+%
+% Attack: "68% regression is a strawman — no real compiler applies all
+%   optimizations unconditionally."
+% Defense: The in-kernel JIT has no cost-model infrastructure. More
+%   importantly, 68% proves optimization profitability is a DEPLOYMENT
+%   property — the optimizer must co-locate with deployment context (runtime
+%   info, workload characteristics), which argues for post-deployment
+%   userspace, not just "add a cost model."
+%
+% Attack: "Microkernel separation is textbook."
+% Defense: Applying it to compilation is new. The specific instantiation —
+%   bytecode as interface, verifier as safety gate, kinsn as extensible
+%   vocabulary — is a concrete architecture, not a restatement of the
+%   principle.
+%
+%%%%%%%%%%%%% END KEY INSIGHT v3 %%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%% KEY INSIGHT v4 — "safety lives at bytecode level" (unified kinsn) %%%%%%%%%%%%%
+%
+% === MOTIVATION ===
+%
+% v3's insight ("bytecode-level offloading") has a "two papers" risk:
+%   - Key insight covers rewriting but NOT kinsn
+%   - kinsn is introduced as "however, bytecode can't express everything"
+%   - A skeptical OSDI reviewer would say: "rewriting works without kinsn,
+%     kinsn works without rewriting — these are two independent contributions"
+%
+% v4 fixes this by finding a DEEPER observation that naturally covers both.
+%
+% === FULL LOGIC CHAIN ===
+%
+% Step 1 — Problem:
+%   eBPF JIT under-optimized. LLVM backend on same bytecode: 40% faster,
+%   50% smaller. JIT lacks hardware-specific instructions and runtime info.
+%
+% Step 2 — Root cause (design choice, not bug):
+%   JIT intentionally trades performance for safety. 1-to-1 translation,
+%   formally verifiable (Jitterbug). Bytecode ISA designed for verifiability,
+%   not optimization.
+%
+% Step 3 — Existing exits, all blocked:
+%   ❌ In-kernel LLVM-level optimization → tens of thousands LOC, hard to upstream
+%   ❌ Pre-load optimization (K2/Merlin/EPSO) → no runtime info, not transparent
+%   ❌ Static peepholes → 68% of legal rewrites regress real programs
+%
+% Step 4 — 68% deeper meaning (key logical step):
+%   68% proves: "Optimization profitability is a DEPLOYMENT property, not a
+%   program property." Same CMOV lowering: +19% isolated, -67% corpus.
+%   Same .bpf.o, different workloads → sign flip.
+%
+%   Therefore optimizer MUST:
+%     (a) Access runtime info → post-deployment
+%     (b) Adapt to context → policy decisions
+%     (c) Iterate without kernel release → userspace
+%
+% Step 5 — Design challenge:
+%   Post-deployment optimization from userspace. But: how can untrusted
+%   userspace safely modify kernel-resident code?
+%
+% Step 6 — KEY OBSERVATION (the pivot — deeper than v3):
+%   "eBPF's safety derives from the verifier checking BYTECODE, not from
+%    restricting what native code the JIT produces."
+%
+%   The verifier is re-entrant (NOT stateless — it depends on map types,
+%   helper signatures, BTF, kernel config — but it does not maintain
+%   cross-invocation state that prevents re-verification). It accepts any
+%   valid bytecode regardless of provenance or timing.
+%
+%   This means safety checking can be REUSED: not a load-time-only gate
+%   but a reusable safety oracle.
+%
+%   This is unique to eBPF:
+%     JVM/V8: optimizer inside trusted runtime (bug → crash)
+%     livepatch: patches native code, cannot re-verify
+%     eBPF verifier: independent of optimizer, can be invoked repeatedly
+%
+%   NOTE: Do NOT say "stateless" — verifier depends on BTF, map types,
+%   helper signatures, kernel config. Say "re-entrant" or "does not maintain
+%   cross-invocation state". A kernel reviewer WILL catch "stateless".
+%
+% Step 7 — INSIGHT (design principle from observation):
+%   "Any transformation that is expressible and verifiable at the bytecode
+%    level can be safely applied post-deployment, by any agent with REJIT
+%    access, provided the kernel mechanism guarantees atomic replacement,
+%    because the verifier independently re-establishes safety."
+%
+%   This naturally covers TWO classes:
+%     - Rewriting existing BPF instructions: map inlining, const prop, DCE,
+%       wide_mem merge — all bytecode-to-bytecode, verifier checks directly
+%     - Introducing new verified idioms (kinsn): each kinsn expands to
+%       ordinary BPF (verifier checks this), native lowering formally proved
+%       equivalent — safety transfers from expansion to native code
+%
+%   kinsn is NOT a "patch for bytecode insufficiency." Since safety lives at
+%   the bytecode level, EXTENDING bytecode expressiveness extends the range
+%   of safe optimizations.
+%
+%   BUT: do not say kinsn is a "natural corollary" — this is too strong.
+%   Honest framing: kinsn is a FURTHER CONTRIBUTION enabled by the same
+%   safety argument. Rewriting works without kinsn; kinsn works without
+%   runtime rewriting. They share the safety framework, not causal necessity.
+%
+% Step 8 — Design (entire system follows from insight):
+%   Kernel mechanism (~600 LOC):
+%     - REJIT syscall: retrieve → re-verify → re-JIT → atomic swap
+%     - kinsn modules: BPF expansion + native lowering + formal proof
+%   Userspace policy (daemon):
+%     - 15-pass pluggable pipeline
+%     - Untrusted: invalid → verifier rejects (fail-safe)
+%
+%   Two optimization classes unified under one framework:
+%     - Hardware specialization: kinsn → RORX, CMOV, BEXTR, MOVBE, LDP/STP
+%     - Runtime specialization: map inlining + const prop + DCE
+%   Both are "bytecode-level expressible and verifiable transformations."
+%
+% Step 9 — Evidence:
+%   Static always-apply: 68% regress, geomean 1.121x (= 12% slowdown)
+%   Selective policy:    geomean 1.018x (damage recovered)
+%   Oracle:              geomean 0.849x (15% improvement)
+%
+% === ONE-SENTENCE INSIGHT (v4) ===
+%
+%   "eBPF's safety derives from the verifier checking bytecode, not from
+%    restricting native code. Any bytecode-level transformation — whether
+%    rewriting existing instructions or introducing new verified idioms —
+%    can therefore be safely applied post-deployment, even by an untrusted
+%    userspace component, because the verifier independently re-establishes
+%    safety on the rewritten program."
+%
+% === v4 ANTICIPATED ATTACKS (extends v3, adds new ones) ===
+%
+% Attack: "kinsn is still a separate contribution."
+% Defense: kinsn shares the SAME safety argument as bytecode rewriting
+%   (verifier checks expansion, formal proof transfers safety to native).
+%   It is a further instantiation of the framework, not a separate system.
+%   But be honest: the coupling is through the safety argument, not through
+%   causal necessity. Frame as "same framework, two instantiations."
+%
+% Attack: "Verifier is stateless — wrong."
+% Defense (FIXED in v4): We say "re-entrant" not "stateless." Verifier
+%   depends on context (BTF, map types, etc.) but does not maintain
+%   cross-invocation state that prevents re-verification of new bytecode.
+%
+% Attack: "Any transformation at any time by any agent — too broad."
+% Defense (FIXED in v4): Limited to "post-deployment, by any agent with
+%   REJIT access, provided kernel mechanism guarantees atomic replacement."
+%
+% Attack: "1.121x vs 1.018x data looks contradictory."
+% Defense: 1.121x is always-apply (= 12% SLOWDOWN, ratio > 1 means rejit
+%   slower). 1.018x is selective (= 1.8% slowdown, most damage recovered).
+%   0.849x is oracle (= 15% SPEEDUP). The narrative should be "regression
+%   elimination + ceiling headroom", not "geomean improvement." Selective
+%   proves the framework is SAFE to deploy; oracle proves HEADROOM exists.
+%
+% Attack: "68% regression is self-inflicted — your passes lack cost models."
+% Defense: Need ablation: even with best static heuristic (oracle-selected
+%   static subset), runtime-adaptive still wins. If we have this data, cite
+%   it. If not, this is a gap in the eval.
+%
+% Attack: "Is this just a better peephole optimizer with extra steps?"
+% Defense: Show at least one non-trivial optimization (map inlining +
+%   const prop + DCE cascade) that is impossible without post-deployment
+%   runtime state. This is the "not just peepholes" evidence.
+%
+% Attack: "kinsn formal equivalence proof — is it real?"
+% Defense: Must specify: Coq? Lean? SMT bitvector? Machine-checked or
+%   pen-and-paper? If not machine-checked, do NOT say "formally verified."
+%   Say "validated through equivalence checking" or "verified by [tool]."
+%
+% Attack: "Comparison to K2/Merlin is unfair — they do superoptimization."
+% Defense: Must include head-to-head perf comparison on same benchmarks,
+%   or explicitly state K2/Merlin solve a different problem (pre-load).
+%
+% === META-LEVEL OBSERVATION ===
+%
+% The paper's strongest contribution may be the EMPIRICAL FINDING:
+%   "68% of legal rewrites regress real programs."
+% Consider reframing the hook from "we propose BPFreJIT" to:
+%   "We discover that static optimization of eBPF is fundamentally
+%    deployment-dependent, and show how to build a system that exploits this."
+% Let the finding drive the story, not the system.
+%
+% === WHAT v4 CHANGES vs v3 ===
+%
+% 1. Key observation deepened: v3 = "bytecode level is rich + constrained"
+%    v4 = "safety lives at bytecode level, not native level"
+% 2. kinsn unified: v3 = kinsn is afterthought ("but bytecode can't...")
+%    v4 = kinsn is further instantiation of same safety argument
+% 3. Verifier description fixed: "stateless" → "re-entrant"
+% 4. Insight scope limited: "any time, any agent" → "post-deployment,
+%    with REJIT access, with atomic replacement guarantee"
+% 5. kinsn honesty: "natural corollary" → "further contribution enabled
+%    by the same safety argument"
+% 6. Data narrative clarified: 1.121x = slowdown, 0.849x = speedup,
+%    story = "regression elimination + ceiling headroom"
+%
+%%%%%%%%%%%%% END KEY INSIGHT v4 %%%%%%%%%%%%%
+
+
+% [] \note{hao: This probably is a nice place to argue the unique challenges: (1) remain low complexity for JIT (kernel), (2) extending semantics for the verifier is nontrivial and error-prone, (3) compilers are still restricted by the insn/reg available and lack of runtime information.}
+% [] \note{to answer: why the problem is hard}
+% \note{Yusheng: I think the first sentence is right, for the rest of them, the current version only focus on bytecode, we also need to from an arch view, say to keep the safety, People cannot do optimization pass in JIT(Which is typical JVM/Wasm did) after verification, also limit it's dynamic optimization oppotunity.}
+
+% [] \note{hao: The existing work can be categorized into two classes: improving the JIT (Jitterbug) (limited by the complexity requirement), add more ad-hoc opts in the compiler, e.g., K2 (limited by the bytecode design). }
+% [] \note{to answer: what is the sota}
+
+
+% [] \note{hao: We should add a footnote for `JIT`. This is really AOT, not JIT; compilation happens at load time, not during the execution; this may confuse compiler people (Zhendong was confused why the eBPF community calls it JIT).}
+% [] \note{hao: We should probably mention: the current JIT is basically one-to-one BPF insn to native insn mapping, few optimizations (if not zero) to keep everything simple; probably mention the loc for aarch64 JIT: arch/arm64/net/bpf_jit_comp.c 3202 lines. }
+% [] \note{We can also mention: in comparison, the modern compiler backend adopts various opts. For aarch64, there is even a machine ir (mir) before emitting the native code to apply various heuristics for backend-specific opt, while in eBPF, it's just one-to-one mapping.}
+% [] \note{We can also mention the number to show the gap between the eBPF jit and LLVM. For the same objects, show the performance/end-to-end/binary size gap. This gives a clear view of the improvement space.}
+
+% [] \note{The goal is just to make it clear, there is a huge gap for the current in-kernel JIT approach.}
+% [] \note{to answer: what is the problem we want to focus}
+
+% [] \note{hao: Maybe consider this: Our key insight is, following the principle of separating mechanisms and strategies, to decouple/distribute/manage the complexity via a new bytecode-level abstraction that provides different views to the JIT, verifier, and the compiler, thereby achieving a highly flexible compilation framework while remaining a low complexity in kernel space.}
+% [] \note{hao: We can mention that the two realizations are proved to be equivalent in a proof assistant before adding it to the kernel. Plus, I am not sure 'realization' is a good term; how can we connect this with 'different views'. I don't have a good candidate. }
+% [] \note{hao: we can refer to the new figure here to show what is the view/complexity for each party. }
+% [] \note{to answer: what is our smart solution}
+% \note{Yusheng: Currently, over half of our optimizations do not depend on Kinsn; therefore, it might be more logical to present BPFreJIT upfront. Although Kinsn introduces significant novelty related to instruction-level optimization, the core insight of our framework, BPFreJIT, is actually orthogonal. Specifically, BPFreJIT aims to transparently enable two distinct classes of optimizations—hardware-specific optimizations and dynamic runtime optimizations. Each of these optimization categories can be activated through various approaches, but achieving transparency, minimal kernel intrusiveness, and guaranteed safety fundamentally requires BPFreJIT.}
+
+
+% [] \note{hao: do we need to mention that the user space daemon is privileged? It's priv on the Linux kernel's implementation, but from a design level, this seems unnecessary. }
+% \note{Yusheng: so it would be better if we are not saying Based on kinsn...because half of it is not just kinsn}
+% [] \note{hao: I assume we will mention the key results and the benchmark used when they are ready, right? It would be more convincing if we had: we evaluate kinsn on real-world workload from popular user space eBPF projects, e.g., Cilium; and the result shows that kinsn provides xx times end-to-end performance improvement, and xx execution time speed up (binary size reduction). }
+
+%%%%%%%%%%%%Outline%%%%%%%%%%%%%%%%%%
+
+%%%
+% message<kernel extension is performance critical>
+% eBPF is increasingly used for networking, observability, security, and scheduling
+% these programs are performance-critical
+% quality of native code affects end-to-end efficiency
+
+%%%
+% message<observation: current kernel extension compilation is under optimized>
+% admitted through the verifier and translated by an in-kernel JIT
+% due to safety requirements, kernel JIT must be simple
+% result:
+% - optimization is conservative and largely one-shot at load time
+% - load-time-only compilation cannot exploit post-deployment opportunities
+
+%%%
+% message<problem: structural code-generation gap between ordinary BPF and hardware ISA>
+% ordinary BPF bytecode does not directly encode many hardware-efficient idioms
+% a simple kernel JIT cannot reliably reconstruct these idioms from generic BPF sequences
+% result: gap between verifier-visible bytecode and efficient native code
+
+%%%
+% message<existing solutions cannot fully solve this gap>
+% impl more optimization in kernel JIT: break safety
+% prior external eBPF optimizers improve code before load or at load time
+%  - still miss runtime-guided specialization after deployment
+%  - do not provide transparency, verifier-backed safety, and extensible hardware-aware code generation
+
+%%%
+% message<key insight: in need of new bytecode insns>
+% introduce kinsn, an extensible bytecode layer aligned with hardware idioms
+% each kinsn also has architecture-specific native lowering
+% each kinsn can be replaced with equivalent impl in original BPF to reuse safety
+% this separates the safety interface from the performance interface without weakening the BPF safety model
+
+%%%
+% message<\tool uses kinsn to create a post-deployment compilation boundary for live eBPF programs>
+% a userspace daemon owns policy:
+% - profiling
+% - rewrite construction
+% - profitability decisions
+% - specialization / hardening decisions
+% a small kernel component owns mechanism:
+% - recover live bytecode
+% - re-verify candidate rewrites
+% - re-JIT
+% - replace safely in place
+% the verifier continues to check ordinary-BPF-visible semantics
+% the JIT remains small because it realizes kinsn rather than becoming a general optimizing compiler
+
+%%%
+% message<This design enables online adaptation while preserving deployment transparency>
+% \tool can revisit already-loaded programs using runtime feedback and stable runtime values
+% replacement is in place, so applications, loaders, and attachment paths do not change
+% invalid rewrites fail closed through the existing verification path
+% new optimization or hardening capabilities can be added without expanding the trusted kernel boundary
+
+%%%
+% message<evaluation>
+% measure generated-code quality on microbenchmarks and real eBPF corpora
+% measure end-to-end application benefit in representative deployments
+% measure online recompilation overhead, disruption, and replacement latency
+% measure safety preservation, semantic correctness, and fail-safe rejection
+% measure extensibility by adding new kinsn / rewrite capabilities
+
+%%%
+% message<contributions>
+% identify the structural code-generation gap in eBPF and motivate a post-deployment compilation boundary
+% design and implement \tool around the kinsn / BPF semantics / native codegen tuple
+% show that live recompilation improves code quality and application performance while preserving safety and keeping kernel complexity small
+
+%%%%%%%%%%%%Outline%%%%%%%%%%%%%%%%%%
+
+% [] \note{hao: 独特挑战，JIT：优化策略大大增加复杂性，verifier：拓展指令语义要求复杂的分析算法，compiler：受限于精简指令&极少reg；kinsn把复杂性分散到不同组建，follow "mechanism"和"strategy"分离的原则，**且**基于verifier保证strategy的安全性；有了kinsn后，内核（JIT）仅提供机制（有什么指令），verifier看到的是原始序列，无分析修改，compiler实现策略，更多指令选择，且因为kinsn的设计，寄存器压力也变小。}
+% [] \note{hao: plus, 我们已经证明序列和本地指令等价，verifier see: prog= inst(kinsn)+insn, proves safe_of(inst(kinsn) + insn); we prove `inst(kinsn) = native_kinsn` and jit provides `original insn = native`, so native_kinsn + native 和 inst(kinsn) + insn语义等价，所以verifier保证的安全性可以传递到native}
+% [] \note{hao: add graph, see group chat}
+
+
+%%%%%%%%%%%%% PREVIOUS VERSION (kinsn-centric framing) — kept for comparison %%%%%%%%%%%%%
+%
+% Kernel extensions are performance-critical in modern systems. Linux uses eBPF as a kernel extension mechanism for networking~\cite{cilium,katran}, observability~\cite{tracee}, security enforcement~\cite{krsi}, and scheduling~\cite{sched_ext}. Many of these eBPF programs execute on hot paths, and their native code quality directly affects end-to-end efficiency.
+%
+% However, current eBPF compilation leaves many optimization opportunities unused. Both eBPF verification~\cite{verifier} and JIT compilation~\cite{linux_bpf_jit} run on the kernel's safety-critical loading path, so the JIT must stay simple. As a result, eBPF optimization remains conservative and largely one-shot at load time. Moreover, a load-time-only compilation pipeline cannot exploit opportunities that appear after deployment, such as runtime profiles and stable runtime values.
+%
+% The root of the problem is that ordinary BPF serves safety well but serves efficiency poorly. Ordinary BPF bytecode gives the verifier a small, target-independent instruction set with explicit semantics. However, efficient native code often depends on hardware-specific idioms that ordinary BPF does not express directly. Closing this mismatch would require the JIT to reconstruct target-specific intent from generic BPF instruction sequences. A simple kernel JIT cannot do that reliably or extensibly. Consequently, the same bytecode interface that enables verifier-backed safety also creates a structural barrier to efficient code generation.
+%
+% Existing approaches do not fully resolve this mismatch. One option is to make the in-kernel JIT more aggressive, but that would push fast-evolving, workload-dependent optimization policy into the kernel boundary and expand kernel complexity. Another option is to optimize eBPF in userspace before load or at load time, as in prior systems~\cite{k2,kfuse,merlin,epso,epass,bcf}. These efforts improve parts of the pipeline, but they still miss runtime-guided specialization after deployment, and they do not simultaneously provide deployment transparency, verifier-backed safety, and an extensible substrate for hardware-aware code generation.
+%
+% Our key insight is that closing this gap requires a new bytecode-level abstraction. We introduce \emph{kinsn}, an extensible bytecode layer aligned with hardware idioms. Each kinsn has two realizations. First, it has an equivalent implementation in ordinary BPF that defines its verifier-visible semantics. Second, it has an architecture-specific native lowering that realizes the same semantics efficiently on a target ISA. In this way, kinsn gives the verifier the semantics it needs and gives the JIT the hardware-specific intent it needs, without weakening the BPF safety model.
+%
+% Based on kinsn, we propose \tool, a post-deployment compilation framework for live eBPF programs. \tool introduces a new compilation boundary after deployment and splits responsibility accordingly. A privileged userspace daemon owns compilation policy: it profiles live programs, constructs rewrites, decides when specialization or hardening is worthwhile, and selects among profitable alternatives. A small kernel component owns mechanism: it recovers live bytecode, re-verifies rewritten candidates, re-JITs them, and replaces the installed native image safely in place. The verifier remains the final safety gate, and the JIT remains small because it realizes kinsn rather than becoming a general-purpose optimizing compiler.
+%
+% This design enables online adaptation without changing the existing deployment model. \tool can revisit already-loaded programs with runtime feedback and stable runtime values. In-place replacement keeps applications, loaders, and attachment paths unchanged. The existing verification path rejects invalid rewrites before installation, so rewrites fail closed. New optimization and hardening capabilities can therefore evolve in userspace without expanding the trusted kernel boundary.
+%
+% We evaluate \tool along five dimensions. We measure generated-code quality on microbenchmarks and real eBPF corpora. We measure end-to-end application benefit in representative deployments. We measure online recompilation overhead, disruption, and replacement latency. We measure safety preservation, semantic correctness, and fail-safe rejection. We also measure extensibility by adding new kinsn and rewrite capabilities.
+%
+% \noindent\textbf{Contributions.}
+% This paper makes three contributions:
+% \begin{itemize}
+%     \item We identify a structural mismatch in eBPF's bytecode interface: ordinary BPF is well suited to verifier-backed safety, but it is not the right interface for expressing hardware-efficient idioms.
+%     \item We design and implement \tool, which introduces kinsn and a post-deployment compilation boundary that keeps optimization policy in userspace and reuses the existing verifier for safety.
+%     \item We show that live recompilation improves generated code and end-to-end performance, preserves safety, and keeps kernel complexity small.
+% \end{itemize}
+%
+% STRENGTHS of this version:
+% - "ordinary BPF serves safety well but serves efficiency poorly" — elegant one-liner
+% - "the same bytecode interface that enables verifier-backed safety also creates a structural barrier" — tension well articulated
+% - kinsn "two realizations" paragraph is the most technically sharp part
+% - "online adaptation" paragraph is well-written and concise
+% - tighter logical flow: problem → root cause → existing work → insight → system → eval
+%
+% WEAKNESSES of this version:
+% - centers on kinsn as THE key insight, but >50% of optimizations don't use kinsn
+% - "Based on kinsn, we propose \tool" — makes framework subordinate to one mechanism
+% - does not mention Safety ≠ Correctness as explicit insight
+% - no quantitative evidence for why static is wrong (68% regression data missing)
+% - no mention of runtime specialization (map inlining) or security hardening
+% - contribution 1 is too narrow ("bytecode mismatch" vs "absence of extensible framework")
+%
+%%%%%%%%%%%%% END PREVIOUS VERSION %%%%%%%%%%%%%
