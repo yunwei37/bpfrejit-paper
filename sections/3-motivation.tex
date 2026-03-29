@@ -2,7 +2,66 @@
 
 % Section 3: Motivation
 
-% Section 3.1: bpf 
+%%%
+% message<motivation role: observations to design pressure>
+% a real code-generation gap exists
+% ordinary eBPF loses optimization-relevant semantics
+% optimization profitability is deployment-dependent
+
+% Section 3.1: Observation I: Real Code-Generation Gap
+
+%%%
+% message<same bytecode, weaker native code>
+% stock kernel JIT below LLVM backend
+% speed gap and code-size gap
+% broad headroom
+% system-level code-generation problem
+
+% Section 3.2: Observation II: Lost Semantics Before Kernel Lowering
+
+%%%
+% message<rotate example as representative case>
+% source-level semantic unit
+% target ISA direct idiom
+% ordinary eBPF expanded before kernel entry
+% kernel JIT sees flattened sequence
+
+%%%
+% message<insight from the example>
+% verifier-friendly canonical ISA
+% poor optimization-facing representation
+% one form serving two roles
+% representation mismatch
+
+% Section 3.3: Observation III: Deployment-Dependent Profitability
+
+%%%
+% message<legal rewrite, unstable profitability>
+% workload-dependent benefit
+% hardware-dependent benefit
+% runtime-value-dependent benefit
+% static always-on policy causes regressions
+
+% Section 3.4: Existing Routes Still Miss One Side
+
+%%%
+% message<existing routes do not close both gaps>
+% in-kernel JIT: closer to execution, higher trusted complexity
+% pre-load optimizer: richer rewriting, no deployment-time facts
+% native patching: post-load flexibility, no verifier-backed safety
+% no route closes both mismatches
+
+% Section 3.5: Design Pressure
+
+%%%
+% message<solution shape forced by the observations>
+% richer optimization-facing bytecode
+% deployment-time rewrite selection
+% userspace policy, kernel mechanism
+% re-verification through existing safety gate
+
+%%%%%%%%%%%% Outline %%%%%%%%%%%%%%%%%%
+
 
 
 
