@@ -1,3 +1,41 @@
+
+%%%%%%%%%%%%% Key phrasings worth preserving (collected from all versions) %%%%%%%%%%%%%
+%
+% === CORE INSIGHT: where safety lives ===
+% - eBPF's safety derives from the verifier checking BYTECODE, not from restricting what native code the JIT produces. [v4 — strongest framing, exposes architectural property]
+% - The verifier can be repurposed as a post-optimization validator, inverting the traditional compile--verify--run pipeline. [current]
+% - The BPF verifier, conventionally seen as a constraint on optimization, is in fact the key enabler of an extensible compilation framework. [v1 — constraint-to-enabler flip]
+%
+% === TRUST MODEL: why this is NOT "apply JVM to eBPF" ===
+% - JVM/V8: optimizer inside trusted runtime (bug -> crash). BPFreJIT: optimizer OUTSIDE the trust boundary (bug -> verifier rejects, kernel safe). The bytecode + mandatory verifier combination enables a trust model that no userspace runtime has. [v2 — strongest defense against "apply A to B" attack]
+% - Decouples optimization safety from optimization correctness: the kernel guarantees safety; correctness is the optimizer's problem, and failure is fail-safe. [current + v4]
+%
+% === WHY NOW / WHY NOBODY DID THIS ===
+% - Kernel community's instinct: optimize IN the kernel. Compiler community's instinct: optimize BEFORE load. Security community's instinct: post-deploy modification requires high trust. Bytecode-level rewriting + existing re-verification sidesteps all three defaults. [v2 — explains why design space was unexplored]
+% - The verifier accepts any valid bytecode regardless of provenance — this is a FACT, not our contribution. Our contribution is the DESIGN that exploits this fact. [v2 — honest scoping]
+%
+% === DEPLOYMENT-DEPENDENCE (empirical finding) ===
+% - Optimization profitability is a DEPLOYMENT property, not a program property. [v3/v4 — reframes 68\% as a discovery, not just motivation]
+% - 68\% doesn't just say "static is bad." Same CMOV lowering: +19\% isolated, -67\% corpus. Same .bpf.o, different workloads -> sign flip. [v4 — concrete evidence against strawman attack]
+% - The paper's strongest contribution may be the EMPIRICAL FINDING. Consider leading with: "We discover that static optimization of eBPF is fundamentally deployment-dependent, and show how to build a system that exploits this." [v4 meta — alternative paper hook]
+%
+% === BYTECODE AS INTERFACE ===
+% - Bytecode is simultaneously: (a) rich enough for sophisticated rewriting, (b) constrained enough for the verifier to re-check safety, (c) available post-deployment. [v3 — three-property characterization]
+% - Bytecode is the right interface for separating optimization policy (userspace) from safety mechanism (kernel). [v2]
+% - Ordinary BPF serves safety well but serves efficiency poorly. The same bytecode interface that enables verifier-backed safety also creates a structural barrier to efficient code generation. [old kinsn-centric — elegant tension statement]
+%
+% === KINSN: unifying framing ===
+% - Since safety lives at the bytecode level, EXTENDING bytecode expressiveness extends the range of safe optimizations. kinsn is not a patch for bytecode insufficiency — it is a further instantiation of the same safety argument. [v4 — unifies kinsn with core insight]
+% - ISA extensibility can be decoupled from verifier complexity. [current — clean one-liner]
+%
+% === VERIFIER PRECISION ===
+% - Do NOT say "stateless" — verifier depends on BTF, map types, helper signatures, kernel config. Say "re-entrant": does not maintain cross-invocation state that prevents re-verification. [v4 — technical correctness note]
+%
+% === DATA NARRATIVE ===
+% - Static always-apply: geomean 1.121x (12\% slowdown, 68\% regress). Selective policy: geomean 1.018x (damage recovered). Oracle: geomean 0.849x (15\% improvement). Story = regression elimination + ceiling headroom. [v4 — how to present numbers honestly]
+%
+%%%%%%%%%%%%% End key phrasings %%%%%%%%%%%%%
+
 \section{Introduction}
 \label{sec:introduction}
 
