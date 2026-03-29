@@ -2,26 +2,52 @@
 
 % Section 2: Background
 
+%%%
+% message<background role: current design space>
+% current compilation and safety contract
+% existing routes to better code generation
+% comparison frame for the rest of the paper
 
-
-
-
-
-% Section 2.1: eBPF Execution Pipeline
+% Section 2.1: current BPF compilation contract
 
 %%%
-% message<eBPF background needed for the motivation>
-% userspace compiles BPF C to ordinary eBPF bytecode
-% the program is loaded through BPF_PROG_LOAD
-% the verifier checks safety on ordinary eBPF at load time
-% accepted bytecode is JIT-compiled to native code at load time
-% the resulting native code executes later when the hook fires
-% Figure 1 should emphasize the load-time / runtime split and omit unrelated kernel details
+% message<current eBPF contract>
+% ordinary eBPF as load interface
+% verifier on bytecode
+% JIT after verifier admission
+% one-shot load-time lowering
 
-% Section 2.2: Existing Optimization Approaches for eBPF
+%%%
+% message<implication of the current contract>
+% verifier-facing canonical form
+% simple kernel-side code generation
+% safety ownership inside kernel
+% optimization point fixed at load time
 
-% Section 2.3: Modern Compilation Framework
+% Section 2.2: Existing Paths to Better Code Generation
 
+%%%
+% message<existing eBPF-side routes>
+% stronger in-kernel JIT
+% pre-load or object-level optimization
+% post-load native patching
+% different lifecycle positions
+
+%%%
+% message<reference points from other compilation systems>
+% LLVM: richer IR and late lowering
+% LLVM: intrinsic-like operations
+% JVM / Wasm: optimize after initial admission
+% reusable ideas beyond eBPF
+
+% Section 2.3: Comparison Axes
+
+%%%
+% message<comparison frame for the paper>
+% when: pre-load, load-time, post-load
+% what form: ordinary bytecode, richer bytecode, native code
+% what information: semantics, hardware, profiles, stable values
+% who owns trust: verifier, optimizer, patcher
 
 %%%%%%%%%%%% Outline %%%%%%%%%%%%%%%%%%
 
