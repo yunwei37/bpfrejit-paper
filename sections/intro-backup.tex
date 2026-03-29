@@ -34,6 +34,11 @@
 % === DATA NARRATIVE ===
 % - Static always-apply: geomean 1.121x (12\% slowdown, 68\% regress). Selective policy: geomean 1.018x (damage recovered). Oracle: geomean 0.849x (15\% improvement). Story = regression elimination + ceiling headroom. [v4 — how to present numbers honestly]
 %
+% === GOOD PHRASES FROM CURRENT INTRO (extracted for reuse) ===
+% - Unlike a standalone application, an eBPF extension is embedded into diverse kernel contexts with varying workloads, hardware, and runtime behavior that a compile-time compiler cannot anticipate. [current — best explanation of WHY deployment-dependence is eBPF-specific]
+% - Unlike other runtimes, the in-kernel JIT trades performance for safety. [current — concise contrast setup]
+% - A verifiable optimization IR. [current — tighter label than "deployment-time IR"]
+%
 %%%%%%%%%%%%% End key phrasings %%%%%%%%%%%%%
 
 \section{Introduction}
