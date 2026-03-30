@@ -17,7 +17,7 @@ For each experiment, should reuse the current repo harnesses whenever possible r
 - Reuse the repository's existing entrypoints whenever possible:
   - `make vm-micro`, `micro/driver.py`
   - `make vm-corpus`, `corpus/driver.py`
-  - `make vm-e2e`, `e2e/run.py`
+  - `make vm-e2e`, `e2e/driver.py`
   - `bpfrejit-daemon serve` plus its Unix socket JSON protocol
 - Use paired comparisons on the same machine / VM / kernel image.
 - Baselines must be consistent:
@@ -150,7 +150,7 @@ Cases that fail this rule should be reported in an appendix / limitations table,
 - **Goal:** Measure application-level benefit for a realistic security/observability deployment.
 - **Compare with:** `stock` vs `rejit`.
 - **Setup:**
-  - Use `python3 e2e/run.py tracee`.
+  - Use `python3 e2e/driver.py tracee`.
   - Keep the current three workload classes if they can be made stable: `exec_storm`, `file_io`, `network`.
   - Before using all three in the paper, debug the current `exec_storm` anomaly. If the anomaly cannot be resolved, exclude `exec_storm` from the main figure and keep it in an appendix limitations table.
   - Run with the same tracee binary, workload duration, and kernel build for both phases.
@@ -175,7 +175,7 @@ Cases that fail this rule should be reported in an appendix / limitations table,
 - **Goal:** Measure deployment-level benefit for a realistic networking/XDP system.
 - **Compare with:** `stock` vs `rejit`.
 - **Setup:**
-  - Use `python3 e2e/run.py katran`.
+  - Use `python3 e2e/driver.py katran`.
   - Fix the current methodological issues before finalizing results:
     - remove fixed phase ordering (`stock -> rejit` only);
     - use counterbalanced or reversed order across paired runs;
