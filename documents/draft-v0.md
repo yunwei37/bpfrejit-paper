@@ -172,7 +172,7 @@ architecture: (1)~\emph{kernel syscall extensions} that allow
 retrieving the original BPF bytecode of loaded programs and
 atomically re-verifying, re-JIT-compiling, and in-place replacing the
 native code of a running program; (2)~\emph{kinsn}, a platform-specific
-instruction extension mechanism implemented via inline kfuncs that
+instruction extension mechanism that
 allows kernel modules to define new instructions with verification
 semantics and native emission callbacks, gracefully degrading to
 function calls when modules are not loaded; and (3)~a \emph{userspace
@@ -200,7 +200,7 @@ application changes).
     supporting all existing eBPF tools, loaders, and subsystems
     (\S\ref{sec:design}, \S\ref{sec:implementation}).
   \item A novel \emph{kinsn} mechanism for platform-specific
-    instruction extensions, implemented via inline kfuncs that reuse
+    instruction extensions, reusing
     the existing kfunc verifier, BTF type system, and module
     lifecycle management with zero verifier modifications
     (\S\ref{sec:kinsn}).
@@ -439,7 +439,7 @@ per program and per site.
 % TODO: Rewrite Design section for v2 architecture.
 % The v2 design is based on three components:
 %   Component 1: Kernel syscall extensions (BPF_PROG_GET_ORIGINAL + BPF_PROG_REJIT)
-%   Component 2: kinsn -- platform-specific instruction extensions via inline kfuncs
+%   Component 2: kinsn -- platform-specific instruction extensions
 %   Component 3: Userspace daemon (discovery, analysis, rewriting, profiling)
 % See plan doc §4 for full architecture diagram and details.
 % Key differences from v1:
@@ -470,7 +470,7 @@ bpf\_prog. Fail-safe: verification failure changes nothing.]}
 \subsection{Component 2: kinsn --- Platform-Specific Instruction Extensions}
 \label{sec:kinsn}
 
-\textit{[TODO: kinsn mechanism via inline kfuncs (KF\_INLINE\_EMIT).
+\textit{[TODO: kinsn mechanism using KF\_INLINE\_EMIT.
 Kernel modules register kinsn with verification semantics + JIT emit
 callbacks. Reuses kfunc verifier, BTF type system, module lifecycle.
 Graceful degradation to function call when module not loaded.]}
